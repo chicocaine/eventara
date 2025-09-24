@@ -45,7 +45,7 @@ The system integrates multiple subsystems into a centralized solution, providing
 ---
 
 ## 📂 Project Structure  
-
+```arduino
 eventara/
 ├── backend/ # Laravel API (User, Event, Volunteer, Venue, Reports)
 │ ├── app/
@@ -57,6 +57,7 @@ eventara/
 │ ├── public/
 │ └── tests/
 └── docs/ # Software engineering docs & diagrams
+```
 
 ---
 
