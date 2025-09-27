@@ -2,47 +2,25 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+// This is a legacy compatibility class that redirects to UserAuth
+// In your application, use UserAuth directly for authentication
+// This exists to maintain compatibility with Laravel's default structure
 
-class User extends Authenticatable
+class User extends UserAuth
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
-
+    // This class simply extends UserAuth to maintain compatibility
+    // with Laravel's default expectations for authentication
+    
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Create a new User instance (actually UserAuth).
+     * This is here for backward compatibility only.
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function __construct(array $attributes = [])
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        // Redirect to UserAuth table
+        $this->setTable('users_auth');
+        $this->setPrimaryKey('user_id');
+        
+        parent::__construct($attributes);
     }
 }
