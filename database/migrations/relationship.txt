@@ -1,0 +1,11 @@
+- roles and permission can be many to many and therefore has a pivot table 'role_permissions'
+- user_auth only has one user_profile
+- a user can only have one role
+- a user can have multiple volunteer applications but only one at a time
+- a volunteer can have many volunteer_availability
+- a user can create many venues
+- venues can have many venue ratings
+- a user can have many venue ratings but only one per venue
+- a user (typically an admin) can create many events
+- an event can have many event sessions
+- an event session can only have one venue
