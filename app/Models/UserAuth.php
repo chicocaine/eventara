@@ -22,6 +22,7 @@ class UserAuth extends Authenticatable
     protected $fillable = [
         'email',
         'password',
+        'active',
         'role_id',
         'email_verified_at',
         'last_login',
@@ -44,6 +45,7 @@ class UserAuth extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'password' => 'hashed',
+        'active' => 'boolean'
     ];
 
     /**
