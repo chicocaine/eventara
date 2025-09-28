@@ -1,7 +1,7 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext.js';
+import { useAuth } from '../hooks/useAuth.js';
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const { user, logout, isLoading } = useAuth();
 
   const handleLogout = async () => {

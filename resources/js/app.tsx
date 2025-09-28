@@ -1,11 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.js';
-import Login from './components/auth/Login.js';
-import Register from './components/auth/Register.js';
-import Dashboard from './components/Dashboard.js';
-import ProtectedRoute from './components/ProtectedRoute.js';
+import { 
+  AuthProvider, 
+  LoginPage, 
+  RegisterPage, 
+  DashboardPage, 
+  ProtectedRoute 
+} from './modules/users/index.js';
 
 function App() {
     return (
@@ -13,15 +15,15 @@ function App() {
             <Router>
                 <Routes>
                     {/* Public routes */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
                     
                     {/* Protected routes */}
                     <Route 
                         path="/dashboard" 
                         element={
                             <ProtectedRoute>
-                                <Dashboard />
+                                <DashboardPage />
                             </ProtectedRoute>
                         } 
                     />

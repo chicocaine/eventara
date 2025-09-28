@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext.js';
-import type { LoginCredentials } from '../../types/auth.js';
+import { useAuth } from '../hooks/useAuth.js';
+import type { LoginCredentials } from '../types/auth.js';
 
-export default function Login() {
+export default function LoginForm() {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState<LoginCredentials>({
