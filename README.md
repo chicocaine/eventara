@@ -133,4 +133,4 @@ Detailed diagrams and wireframes: [Figma Prototype](https://www.figma.com/design
 ---
 
 ## 📜 License
-This project is licensed under the MIT License – see the [LICENSE](https://mit-license.org/)
+This project is licensed under the MIT License – see the [LICENSE](https://mit-license.org/).
