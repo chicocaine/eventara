@@ -21,3 +21,7 @@ Route::post('/reactivation/check-status', [ReactivationController::class, 'check
 Route::post('/password-reset/send-code', [PasswordResetController::class, 'sendCode'])->name('api.password-reset.send-code');
 Route::post('/password-reset/reset-password', [PasswordResetController::class, 'resetPassword'])->name('api.password-reset.reset-password');
 Route::post('/password-reset/check-status', [PasswordResetController::class, 'checkStatus'])->name('api.password-reset.check-status');
+
+// Google OAuth routes
+Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('api.google.redirect');
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('api.google.callback');
