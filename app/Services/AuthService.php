@@ -24,30 +24,21 @@ class AuthService
      */
     public function login(string $email, string $password, bool $remember = false): UserAuth
     {
-        // Attempt authentication
-        $credentials = [
-            'email' => $email,
-            'password' => $password,
-            'active' => true, // Only allow active users to login
-        ];
-
-        if (!Auth::attempt($credentials, $remember)) {
+        // Find user by email first
+        $user = UserAuth::where('email', $email)->first();
+        
+        if (!$user || !Hash::check($password, $user->password)) {
             Log::warning('Failed login attempt', [
                 'email' => $email,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
             
-            throw new AuthenticationException('Invalid credentials or account is not active.');
+            throw new AuthenticationException('Invalid credentials.');
         }
 
-        /** @var UserAuth $user */
-        $user = Auth::user();
-        
-        // Check if user is suspended
+        // Check if user is suspended (suspended users cannot login at all)
         if ($user->isSuspended()) {
-            Auth::logout(); // Log them out immediately
-            
             Log::warning('Suspended user attempted login', [
                 'user_id' => $user->user_id,
                 'email' => $user->email,
@@ -57,9 +48,36 @@ class AuthService
             throw new AuthenticationException('Your account has been suspended. Please contact support.');
         }
         
-        // Update last login timestamp
-        $user->updateLastLogin();
+        // If user is inactive, they have valid credentials but need reactivation
+        if (!$user->active) {
+            Log::info('Inactive user attempted login - needs reactivation', [
+                'user_id' => $user->user_id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
+            ]);
+            
+            // Throw a special exception that indicates account reactivation needed
+            throw new \App\Exceptions\AccountInactiveException('Your account is inactive. Please reactivate your account to continue.');
+        }
         
+        // For active users, use Laravel's authentication
+        $credentials = [
+            'email' => $email,
+            'password' => $password,
+        ];
+
+        if (!Auth::attempt($credentials, $remember)) {
+            Log::warning('Active user auth attempt failed unexpectedly', [
+                'email' => $email,
+                'ip' => request()->ip(),
+            ]);
+            
+            throw new AuthenticationException('Authentication failed.');
+        }
+
+        // Update last login timestamp for active users
+        $user->updateLastLogin();
+
         Log::info('Successful login', [
             'user_id' => $user->user_id,
             'email' => $user->email,
@@ -67,9 +85,7 @@ class AuthService
         ]);
 
         return $user;
-    }
-
-    /**
+    }    /**
      * Register a new user.
      *
      * @param array $userData
@@ -146,7 +162,8 @@ class AuthService
      */
     public function isAuthenticated(): bool
     {
-        return Auth::check() && Auth::user()->active;
+        $user = Auth::user();
+        return $user && $user->active && !$user->suspended;
     }
 
     /**

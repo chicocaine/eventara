@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext.js';
 import Login from './components/auth/Login.js';
 import Register from './components/auth/Register.js';
 import Dashboard from './components/Dashboard.js';
+import ReactivationPage from './components/ReactivationPage.js';
 import ProtectedRoute from './components/ProtectedRoute.js';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
                     {/* Public routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/reactivate" element={<ReactivationPage />} />
                     
                     {/* Protected routes */}
                     <Route 
