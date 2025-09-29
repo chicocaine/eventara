@@ -30,6 +30,7 @@ export default function ReactivationPage({}: ReactivationPageProps) {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     location.state?.message ? { type: 'error', text: location.state.message } : null
   );
@@ -115,15 +116,13 @@ export default function ReactivationPage({}: ReactivationPageProps) {
       });
 
       if (response.data.success) {
+        setIsSuccess(true);
         setMessage({ 
           type: 'success', 
           text: response.data.message || 'Account reactivated successfully!' 
         });
         
-        // Wait a moment to show success message, then redirect
-        setTimeout(() => {
-          navigate(response.data.redirect_url || '/dashboard');
-        }, 1500);
+        // Don't auto-redirect anymore - let user click the button
       } else {
         setMessage({ type: 'error', text: response.data.message });
       }
@@ -133,6 +132,14 @@ export default function ReactivationPage({}: ReactivationPageProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBackToLogin = () => {
+    navigate('/login', { 
+      state: { 
+        message: 'Account reactivated successfully! Please sign in to continue.' 
+      } 
+    });
   };
 
   const formatExpirationTime = (expiresAt: string | null): string => {
@@ -202,6 +209,30 @@ export default function ReactivationPage({}: ReactivationPageProps) {
           </div>
         )}
 
+        {isSuccess ? (
+          <div className="text-center space-y-6">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-green-100">
+              <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Account Reactivated!</h3>
+              <p className="text-sm text-gray-600">
+                Your account has been successfully reactivated. You can now sign in to access your dashboard.
+              </p>
+            </div>
+
+            <button
+              onClick={handleBackToLogin}
+              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Back to Login
+            </button>
+          </div>
+        ) : (
+          <>
         <form className="mt-8 space-y-6" onSubmit={isCodeSent ? verifyReactivationCode : sendReactivationCode}>
           <div className="space-y-4">
             <div>
@@ -307,6 +338,8 @@ export default function ReactivationPage({}: ReactivationPageProps) {
             </button>
           </p>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
