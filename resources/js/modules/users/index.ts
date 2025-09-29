@@ -10,6 +10,7 @@ export { default as RegisterForm } from './components/RegisterForm.js';
 export { default as ProtectedRoute } from './components/ProtectedRoute.js';
 export { default as ReactivationPageComponent } from './components/ReactivationPage.js';
 
+
 // Contexts & Providers
 export { AuthProvider, useAuth } from './contexts/AuthContext.js';
 
