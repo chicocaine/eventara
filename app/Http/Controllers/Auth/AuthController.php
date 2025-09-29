@@ -47,6 +47,7 @@ class AuthController extends Controller
                         'display_name' => $user->display_name,
                         'role' => $user->role?->role,
                         'active' => $user->active,
+                        'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
                     ],
                     'redirect_url' => $this->getIntendedUrl()
@@ -84,6 +85,7 @@ class AuthController extends Controller
                         'display_name' => $user->display_name,
                         'role' => $user->role?->role,
                         'active' => $user->active,
+                        'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
                     ],
                     'redirect_url' => '/dashboard'
@@ -141,6 +143,7 @@ class AuthController extends Controller
                 'display_name' => $user->display_name,
                 'role' => $user->role?->role,
                 'active' => $user->active,
+                'suspended' => $user->suspended,
                 'is_volunteer' => $user->isVolunteer(),
             ],
         ]);

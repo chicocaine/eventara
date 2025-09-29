@@ -16,7 +16,6 @@ class PermissionsSeeder extends Seeder
         $now = Carbon::now();
         
         $permissions = [
-            // Base user permissions
             [
                 'permission' => 'view_profile',
                 'created_at' => $now,
@@ -48,7 +47,6 @@ class PermissionsSeeder extends Seeder
                 'updated_at' => $now,
             ],
             
-            // Volunteer specific permissions
             [
                 'permission' => 'is_volunteer',
                 'created_at' => $now,
@@ -70,7 +68,6 @@ class PermissionsSeeder extends Seeder
                 'updated_at' => $now,
             ],
             
-            // Admin permissions
             [
                 'permission' => 'admin_access',
                 'created_at' => $now,

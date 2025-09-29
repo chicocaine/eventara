@@ -44,6 +44,19 @@ class AuthService
         /** @var UserAuth $user */
         $user = Auth::user();
         
+        // Check if user is suspended
+        if ($user->isSuspended()) {
+            Auth::logout(); // Log them out immediately
+            
+            Log::warning('Suspended user attempted login', [
+                'user_id' => $user->user_id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
+            ]);
+            
+            throw new AuthenticationException('Your account has been suspended. Please contact support.');
+        }
+        
         // Update last login timestamp
         $user->updateLastLogin();
         
@@ -78,6 +91,7 @@ class AuthService
                 'email' => $userData['email'],
                 'password' => Hash::make($userData['password']),
                 'active' => true,
+                'suspended' => false,
                 'role_id' => $this->getDefaultRoleId(),
                 'email_verified_at' => null, // Will be set after email verification
             ]);
@@ -227,6 +241,44 @@ class AuthService
             'email' => $user->email,
         ]);
 
+        return true;
+    }
+
+    /**
+     * Suspend a user account.
+     *
+     * @param UserAuth $user
+     * @return bool
+     */
+    public function suspendUser(UserAuth $user): bool
+    {
+        $user->suspend();
+        
+        Log::info('User account suspended', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'suspended_by' => Auth::user()?->user_id ?? 'system',
+        ]);
+        
+        return true;
+    }
+    
+    /**
+     * Unsuspend a user account.
+     *
+     * @param UserAuth $user
+     * @return bool
+     */
+    public function unsuspendUser(UserAuth $user): bool
+    {
+        $user->unsuspend();
+        
+        Log::info('User account unsuspended', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'unsuspended_by' => Auth::user()?->user_id ?? 'system',
+        ]);
+        
         return true;
     }
 
