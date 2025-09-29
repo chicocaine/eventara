@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
-import type { LoginCredentials, RegisterCredentials, AuthResponse, User } from '../types/auth.js';
+import type { LoginCredentials, RegisterCredentials, AuthResponse, User, PasswordResetResponse } from '../types/auth.js';
 
 // Set up axios defaults
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -132,6 +132,81 @@ class AuthService {
     } catch (error) {
       console.warn('Auth check failed:', error);
       return { authenticated: false };
+    }
+  }
+
+  /**
+   * Send password reset code to email
+   */
+  async forgotPassword(email: string): Promise<PasswordResetResponse> {
+    try {
+      console.log('Attempting forgot password to:', `/api/password-reset/send-code`);
+      
+      const response: AxiosResponse<PasswordResetResponse> = await axios.post(`/api/password-reset/send-code`, {
+        email,
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      });
+
+      console.log('Forgot password response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      
+      return {
+        success: false,
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
+        errors: { general: ['Unable to connect to server'] }
+      };
+    }
+  }
+
+  /**
+   * Reset password with code
+   */
+  async resetPassword(email: string, code: string, password: string, passwordConfirmation: string): Promise<PasswordResetResponse> {
+    try {
+      console.log('Attempting reset password to:', `/api/password-reset/reset-password`);
+      
+      const response: AxiosResponse<PasswordResetResponse> = await axios.post(`/api/password-reset/reset-password`, {
+        email,
+        code,
+        password,
+        password_confirmation: passwordConfirmation,
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      });
+
+      console.log('Reset password response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      
+      return {
+        success: false,
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
+        errors: { general: ['Unable to connect to server'] }
+      };
     }
   }
 
