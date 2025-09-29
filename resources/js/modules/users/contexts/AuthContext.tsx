@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AuthContextType, User, LoginCredentials, RegisterCredentials, AuthResponse } from '../types/auth.js';
+import type { AuthContextType, User, LoginCredentials, RegisterCredentials, AuthResponse, PasswordResetResponse } from '../types/auth.js';
 import { authService } from '../services/authService.js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,11 +94,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const forgotPassword = async (email: string): Promise<PasswordResetResponse> => {
+    try {
+      return await authService.forgotPassword(email);
+    } catch (error) {
+      console.error('Forgot password failed:', error);
+      return {
+        success: false,
+        message: 'Failed to send reset code. Please try again.',
+        errors: { general: ['An unexpected error occurred'] }
+      };
+    }
+  };
+
+  const resetPassword = async (email: string, code: string, password: string, passwordConfirmation: string): Promise<PasswordResetResponse> => {
+    try {
+      return await authService.resetPassword(email, code, password, passwordConfirmation);
+    } catch (error) {
+      console.error('Reset password failed:', error);
+      return {
+        success: false,
+        message: 'Failed to reset password. Please try again.',
+        errors: { general: ['An unexpected error occurred'] }
+      };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
     register,
     logout,
+    forgotPassword,
+    resetPassword,
     isLoading,
     isAuthenticated: !!user,
   };
