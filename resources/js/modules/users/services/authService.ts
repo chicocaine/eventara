@@ -21,7 +21,7 @@ const getCSRFToken = (): string => {
 getCSRFToken();
 
 class AuthService {
-  private baseURL = '/api/auth';
+  private baseURL = '';
 
   /**
    * Login user with email and password
@@ -104,7 +104,7 @@ class AuthService {
    */
   async checkAuth(): Promise<{ authenticated: boolean; user?: User }> {
     try {
-      const response = await axios.get(`${this.baseURL}/check`, {
+      const response = await axios.get(`${this.baseURL}/api/auth/check`, {
         headers: {
           'Accept': 'application/json',
         }

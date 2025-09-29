@@ -1,12 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.js';
-import Login from './components/auth/Login.js';
-import Register from './components/auth/Register.js';
-import Dashboard from './components/Dashboard.js';
-import ReactivationPage from './components/ReactivationPage.js';
-import ProtectedRoute from './components/ProtectedRoute.js';
+import { 
+  AuthProvider, 
+  LoginPage, 
+  RegisterPage, 
+  DashboardPage,
+  ReactivationPage,
+  ProtectedRoute 
+} from './modules/users/index.js';
 
 function App() {
     return (
@@ -14,8 +16,8 @@ function App() {
             <Router>
                 <Routes>
                     {/* Public routes */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
                     <Route path="/reactivate" element={<ReactivationPage />} />
                     
                     {/* Protected routes */}
@@ -23,7 +25,7 @@ function App() {
                         path="/dashboard" 
                         element={
                             <ProtectedRoute>
-                                <Dashboard />
+                                <DashboardPage />
                             </ProtectedRoute>
                         } 
                     />

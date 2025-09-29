@@ -4,7 +4,6 @@ export interface User {
   display_name: string;
   role?: string;
   active?: boolean;
-  suspended?: boolean;
   is_volunteer?: boolean;
 }
 
@@ -25,9 +24,8 @@ export interface AuthResponse {
   message: string;
   user?: User;
   redirect_url?: string;
-  errors?: Record<string, string[]>;
   needs_reactivation?: boolean;
-  email?: string;
+  errors?: Record<string, string[]>;
 }
 
 export interface ValidationError {
