@@ -21,14 +21,14 @@ const getCSRFToken = (): string => {
 getCSRFToken();
 
 class AuthService {
-  private baseURL = '';
-
   /**
    * Login user with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response: AxiosResponse<AuthResponse> = await axios.post(`${this.baseURL}/login`, {
+      console.log('Attempting login to:', `/api/auth/login`);
+      
+      const response: AxiosResponse<AuthResponse> = await axios.post(`/api/auth/login`, {
         email: credentials.email,
         password: credentials.password,
         remember: credentials.remember || false,
@@ -36,18 +36,25 @@ class AuthService {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         }
       });
 
+      console.log('Login response:', response.data);
       return response.data;
     } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error config:', error.config);
+      
       if (error.response?.data) {
         return error.response.data;
       }
       
       return {
         success: false,
-        message: 'Network error occurred. Please try again.',
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
         errors: { general: ['Unable to connect to server'] }
       };
     }
@@ -58,7 +65,9 @@ class AuthService {
    */
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
-      const response: AxiosResponse<AuthResponse> = await axios.post(`${this.baseURL}/register`, {
+      console.log('Attempting register to:', `/api/auth/register`);
+      
+      const response: AxiosResponse<AuthResponse> = await axios.post(`/api/auth/register`, {
         email: credentials.email,
         password: credentials.password,
         password_confirmation: credentials.password_confirmation,
@@ -66,18 +75,25 @@ class AuthService {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         }
       });
 
+      console.log('Register response:', response.data);
       return response.data;
     } catch (error: any) {
+      console.error('Register error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error config:', error.config);
+      
       if (error.response?.data) {
         return error.response.data;
       }
       
       return {
         success: false,
-        message: 'Network error occurred. Please try again.',
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
         errors: { general: ['Unable to connect to server'] }
       };
     }
@@ -88,9 +104,10 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await axios.post(`${this.baseURL}/logout`, {}, {
+      await axios.post(`/api/auth/logout`, {}, {
         headers: {
           'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         }
       });
     } catch (error) {
@@ -104,14 +121,16 @@ class AuthService {
    */
   async checkAuth(): Promise<{ authenticated: boolean; user?: User }> {
     try {
-      const response = await axios.get(`${this.baseURL}/api/auth/check`, {
+      const response = await axios.get(`/api/auth/check`, {
         headers: {
           'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
         }
       });
 
       return response.data;
     } catch (error) {
+      console.warn('Auth check failed:', error);
       return { authenticated: false };
     }
   }
@@ -121,7 +140,7 @@ class AuthService {
    */
   async refreshCSRF(): Promise<void> {
     try {
-      await axios.get(`${this.baseURL}/sanctum/csrf-cookie`);
+      await axios.get('/sanctum/csrf-cookie');
       getCSRFToken();
     } catch (error) {
       console.warn('Failed to refresh CSRF token');
