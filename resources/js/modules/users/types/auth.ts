@@ -24,6 +24,7 @@ export interface AuthResponse {
   message: string;
   user?: User;
   redirect_url?: string;
+  needs_reactivation?: boolean;
   errors?: Record<string, string[]>;
 }
 

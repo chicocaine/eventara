@@ -24,29 +24,60 @@ class AuthService
      */
     public function login(string $email, string $password, bool $remember = false): UserAuth
     {
-        // Attempt authentication
-        $credentials = [
-            'email' => $email,
-            'password' => $password,
-            'active' => true, // Only allow active users to login
-        ];
-
-        if (!Auth::attempt($credentials, $remember)) {
+        // Find user by email first
+        $user = UserAuth::where('email', $email)->first();
+        
+        if (!$user || !Hash::check($password, $user->password)) {
             Log::warning('Failed login attempt', [
                 'email' => $email,
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
             ]);
             
-            throw new AuthenticationException('Invalid credentials or account is not active.');
+            throw new AuthenticationException('Invalid credentials.');
         }
 
-        /** @var UserAuth $user */
-        $user = Auth::user();
+        // Check if user is suspended (suspended users cannot login at all)
+        if ($user->isSuspended()) {
+            Log::warning('Suspended user attempted login', [
+                'user_id' => $user->user_id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
+            ]);
+            
+            throw new AuthenticationException('Your account has been suspended. Please contact support.');
+        }
         
-        // Update last login timestamp
+        // If user is inactive, they have valid credentials but need reactivation
+        if (!$user->active) {
+            Log::info('Inactive user attempted login - needs reactivation', [
+                'user_id' => $user->user_id,
+                'email' => $user->email,
+                'ip' => request()->ip(),
+            ]);
+            
+            // Throw a special exception that indicates account reactivation needed
+            throw new \App\Exceptions\AccountInactiveException('Your account is inactive. Please reactivate your account to continue.');
+        }
+        
+        // For active users, use Laravel's authentication
+        $credentials = [
+            'email' => $email,
+            'password' => $password,
+        ];
+
+        if (!Auth::attempt($credentials, $remember)) {
+            Log::warning('Active user auth attempt failed unexpectedly', [
+                'email' => $email,
+                'ip' => request()->ip(),
+            ]);
+            
+            throw new AuthenticationException('Authentication failed.');
+        }
+
+        // Update last login timestamp for active users
         $user->updateLastLogin();
-        
+
         Log::info('Successful login', [
             'user_id' => $user->user_id,
             'email' => $user->email,
@@ -54,9 +85,7 @@ class AuthService
         ]);
 
         return $user;
-    }
-
-    /**
+    }    /**
      * Register a new user.
      *
      * @param array $userData
@@ -78,6 +107,7 @@ class AuthService
                 'email' => $userData['email'],
                 'password' => Hash::make($userData['password']),
                 'active' => true,
+                'suspended' => false,
                 'role_id' => $this->getDefaultRoleId(),
                 'email_verified_at' => null, // Will be set after email verification
             ]);
@@ -132,7 +162,8 @@ class AuthService
      */
     public function isAuthenticated(): bool
     {
-        return Auth::check() && Auth::user()->active;
+        $user = Auth::user();
+        return $user && $user->active && !$user->suspended;
     }
 
     /**
@@ -227,6 +258,44 @@ class AuthService
             'email' => $user->email,
         ]);
 
+        return true;
+    }
+
+    /**
+     * Suspend a user account.
+     *
+     * @param UserAuth $user
+     * @return bool
+     */
+    public function suspendUser(UserAuth $user): bool
+    {
+        $user->suspend();
+        
+        Log::info('User account suspended', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'suspended_by' => Auth::user()?->user_id ?? 'system',
+        ]);
+        
+        return true;
+    }
+    
+    /**
+     * Unsuspend a user account.
+     *
+     * @param UserAuth $user
+     * @return bool
+     */
+    public function unsuspendUser(UserAuth $user): bool
+    {
+        $user->unsuspend();
+        
+        Log::info('User account unsuspended', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'unsuspended_by' => Auth::user()?->user_id ?? 'system',
+        ]);
+        
         return true;
     }
 

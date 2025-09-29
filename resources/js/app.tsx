@@ -5,7 +5,8 @@ import {
   AuthProvider, 
   LoginPage, 
   RegisterPage, 
-  DashboardPage, 
+  DashboardPage,
+  ReactivationPage,
   ProtectedRoute 
 } from './modules/users/index.js';
 
@@ -17,6 +18,8 @@ function App() {
                     {/* Public routes */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
+
+                    <Route path="/reactivate" element={<ReactivationPage />} />
                     
                     {/* Protected routes */}
                     <Route 

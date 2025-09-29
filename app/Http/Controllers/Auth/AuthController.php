@@ -47,6 +47,7 @@ class AuthController extends Controller
                         'display_name' => $user->display_name,
                         'role' => $user->role?->role,
                         'active' => $user->active,
+                        'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
                     ],
                     'redirect_url' => $this->getIntendedUrl()
@@ -54,6 +55,22 @@ class AuthController extends Controller
             }
 
             return redirect()->intended('/dashboard');
+
+        } catch (\App\Exceptions\AccountInactiveException $e) {
+            // Handle inactive account - redirect to reactivation
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'needs_reactivation' => true,
+                    'redirect_url' => '/reactivate',
+                    'email' => $request->input('email'),
+                ], 403);
+            }
+
+            return redirect('/reactivate')
+                ->with('email', $request->input('email'))
+                ->with('message', $e->getMessage());
 
         } catch (AuthenticationException $e) {
             return $this->handleAuthError($request, $e->getMessage());
@@ -84,6 +101,7 @@ class AuthController extends Controller
                         'display_name' => $user->display_name,
                         'role' => $user->role?->role,
                         'active' => $user->active,
+                        'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
                     ],
                     'redirect_url' => '/dashboard'
@@ -141,6 +159,7 @@ class AuthController extends Controller
                 'display_name' => $user->display_name,
                 'role' => $user->role?->role,
                 'active' => $user->active,
+                'suspended' => $user->suspended,
                 'is_volunteer' => $user->isVolunteer(),
             ],
         ]);

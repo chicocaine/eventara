@@ -23,6 +23,7 @@ class UserAuth extends Authenticatable
         'email',
         'password',
         'active',
+        'suspended',
         'role_id',
         'email_verified_at',
         'last_login',
@@ -45,7 +46,8 @@ class UserAuth extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'password' => 'hashed',
-        'active' => 'boolean'
+        'active' => 'boolean',
+        'suspended' => 'boolean'
     ];
 
     /**
@@ -163,5 +165,37 @@ class UserAuth extends Authenticatable
     public function updateLastLogin(): void
     {
         $this->update(['last_login' => now()]);
+    }
+
+    /**
+     * Check if user is suspended.
+     */
+    public function isSuspended(): bool
+    {
+        return $this->suspended;
+    }
+
+    /**
+     * Check if user can login (active and not suspended).
+     */
+    public function canLogin(): bool
+    {
+        return $this->active && !$this->suspended;
+    }
+
+    /**
+     * Suspend the user.
+     */
+    public function suspend(): void
+    {
+        $this->update(['suspended' => true]);
+    }
+
+    /**
+     * Unsuspend the user.
+     */
+    public function unsuspend(): void
+    {
+        $this->update(['suspended' => false]);
     }
 }

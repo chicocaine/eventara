@@ -30,6 +30,17 @@ export default function LoginForm() {
         navigate('/dashboard');
       }
     } else {
+
+      // Check if account needs reactivation
+      if (response.needs_reactivation) {
+        navigate('/reactivate', { 
+          state: { 
+            email: credentials.email, 
+            message: response.message 
+          } 
+        });
+        return;
+      }
       setMessage(response.message);
       if (response.errors) {
         setErrors(response.errors);
