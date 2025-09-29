@@ -23,6 +23,7 @@ export default function ResetPasswordForm() {
   });
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     location.state?.message ? { type: 'success', text: location.state.message } : null
   );
@@ -62,19 +63,13 @@ export default function ResetPasswordForm() {
       });
 
       if (response.data.success) {
+        setIsSuccess(true);
         setMessage({ 
           type: 'success', 
           text: response.data.message 
         });
         
-        // Redirect to login after successful reset
-        setTimeout(() => {
-          navigate('/login', { 
-            state: { 
-              message: 'Password reset successfully! Please sign in with your new password.' 
-            } 
-          });
-        }, 2000);
+        // Don't auto-redirect anymore - let user click the button
       } else {
         setMessage({ type: 'error', text: response.data.message });
         if (response.data.errors) {
@@ -143,6 +138,14 @@ export default function ResetPasswordForm() {
     }
   };
 
+  const handleBackToLogin = () => {
+    navigate('/login', { 
+      state: { 
+        message: 'Password reset successfully! Please sign in with your new password.' 
+      } 
+    });
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -175,7 +178,30 @@ export default function ResetPasswordForm() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        {isSuccess ? (
+          <div className="text-center space-y-6">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-green-100">
+              <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Password Reset Successful!</h3>
+              <p className="text-sm text-gray-600">
+                Your password has been updated successfully. You can now sign in with your new password.
+              </p>
+            </div>
+
+            <button
+              onClick={handleBackToLogin}
+              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Back to Login
+            </button>
+          </div>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="sr-only">
@@ -193,7 +219,7 @@ export default function ResetPasswordForm() {
                 placeholder="Email address"
                 value={formData.email}
                 onChange={handleInputChange('email')}
-                disabled={isLoading}
+                disabled={isLoading || isSuccess}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">
@@ -218,7 +244,7 @@ export default function ResetPasswordForm() {
                 placeholder="Reset Code (6 characters)"
                 value={formData.code}
                 onChange={handleInputChange('code')}
-                disabled={isLoading}
+                disabled={isLoading || isSuccess}
               />
               {errors.code && (
                 <p className="mt-1 text-sm text-red-600">
@@ -243,7 +269,7 @@ export default function ResetPasswordForm() {
                 placeholder="New password (minimum 8 characters)"
                 value={formData.password}
                 onChange={handleInputChange('password')}
-                disabled={isLoading}
+                disabled={isLoading || isSuccess}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">
@@ -268,7 +294,7 @@ export default function ResetPasswordForm() {
                 placeholder="Confirm new password"
                 value={formData.password_confirmation}
                 onChange={handleInputChange('password_confirmation')}
-                disabled={isLoading}
+                disabled={isLoading || isSuccess}
               />
               {errors.password_confirmation && (
                 <p className="mt-1 text-sm text-red-600">
@@ -281,9 +307,9 @@ export default function ResetPasswordForm() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSuccess}
               className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
-                isLoading 
+                isLoading || isSuccess
                   ? 'bg-indigo-400 cursor-not-allowed' 
                   : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
               }`}
@@ -306,7 +332,7 @@ export default function ResetPasswordForm() {
             <button
               type="button"
               onClick={resendCode}
-              disabled={isLoading || !formData.email}
+              disabled={isLoading || !formData.email || isSuccess}
               className="text-sm text-indigo-600 hover:text-indigo-500 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
               Didn't receive the code? Resend it
@@ -323,6 +349,7 @@ export default function ResetPasswordForm() {
             </p>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
