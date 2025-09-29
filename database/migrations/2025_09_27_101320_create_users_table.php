@@ -17,11 +17,14 @@ return new class extends Migration
             $table->timestampTz('email_verified_at')->nullable();
             $table->string('password');
             $table->boolean('active');
+            $table->boolean('suspended')->default(false);
             $table->foreignId('role_id')->constrained('roles', 'role_id')->onDelete('restrict');
             $table->rememberToken();
             $table->timestampTz('last_login')->nullable();
             $table->timestampsTz();
 
+            $table->index('active');
+            $table->index('suspended');
             $table->index('created_at');
             $table->index('last_login');
         });
