@@ -9,6 +9,8 @@ import {
   ReactivationPage,
   ProtectedRoute 
 } from './modules/users/index.js';
+import ForgotPasswordForm from './modules/users/components/ForgotPasswordForm.js';
+import ResetPasswordForm from './modules/users/components/ResetPasswordForm.js';
 
 function App() {
     return (
@@ -18,7 +20,8 @@ function App() {
                     {/* Public routes */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
-
+                    <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+                    <Route path="/reset-password" element={<ResetPasswordForm />} />
                     <Route path="/reactivate" element={<ReactivationPage />} />
                     
                     {/* Protected routes */}

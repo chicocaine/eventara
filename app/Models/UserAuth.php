@@ -172,7 +172,7 @@ class UserAuth extends Authenticatable
      */
     public function isSuspended(): bool
     {
-        return $this->suspended;
+        return (bool) $this->suspended;
     }
 
     /**
@@ -180,7 +180,7 @@ class UserAuth extends Authenticatable
      */
     public function canLogin(): bool
     {
-        return $this->active && !$this->suspended;
+        return (bool) $this->active && !(bool) $this->suspended;
     }
 
     /**
