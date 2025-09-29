@@ -4,6 +4,7 @@ export interface User {
   display_name: string;
   role?: string;
   active?: boolean;
+  suspended?: boolean;
   is_volunteer?: boolean;
 }
 
