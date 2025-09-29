@@ -162,7 +162,8 @@ class AuthService
      */
     public function isAuthenticated(): bool
     {
-        return Auth::check() && Auth::user()->active;
+        $user = Auth::user();
+        return $user && $user->active && !$user->suspended;
     }
 
     /**
