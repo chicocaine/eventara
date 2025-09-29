@@ -26,6 +26,8 @@ export interface AuthResponse {
   user?: User;
   redirect_url?: string;
   errors?: Record<string, string[]>;
+  needs_reactivation?: boolean;
+  email?: string;
 }
 
 export interface ValidationError {
