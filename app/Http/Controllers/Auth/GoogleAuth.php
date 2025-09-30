@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\UserAuth;
 use App\Models\UserProfile;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Exception;
@@ -23,6 +24,15 @@ class GoogleAuth extends Controller
      */
     public function redirectToGoogle(): RedirectResponse
     {
+        Log::info('Google OAuth redirect initiated', [
+            'ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'session_id' => session()->getId(),
+        ]);
+        
+        // Store a flag in session to track OAuth attempt
+        session(['google_oauth_started' => true, 'oauth_start_time' => now()]);
+        
         return Socialite::driver('google')->redirect();
     }
 
@@ -34,46 +44,200 @@ class GoogleAuth extends Controller
     public function handleGoogleCallback(): RedirectResponse
     {
         try {
+            Log::info('Google OAuth callback received', [
+                'query_params' => request()->query(),
+                'ip' => request()->ip(),
+                'session_id' => session()->getId(),
+                'oauth_started' => session('google_oauth_started'),
+                'oauth_start_time' => session('oauth_start_time'),
+            ]);
+            
+            // Check for error in callback
+            if (request()->has('error')) {
+                Log::warning('Google OAuth error in callback', [
+                    'error' => request()->get('error'),
+                    'error_description' => request()->get('error_description'),
+                ]);
+                session()->forget(['google_oauth_started', 'oauth_start_time']);
+                return redirect('/login')->with('error', 'Google authentication was cancelled or failed.');
+            }
+            
+            // Check if we have the OAuth start flag
+            if (!session('google_oauth_started')) {
+                Log::warning('Google OAuth callback without start flag - possible session issue');
+                return redirect('/login')->with('error', 'Authentication session expired. Please try again.');
+            }
+            
             $googleUser = Socialite::driver('google')->user();
             
+            // Clear OAuth session flags
+            session()->forget(['google_oauth_started', 'oauth_start_time']);
+            
+            Log::info('Google user data retrieved', [
+                'email' => $googleUser->email,
+                'name' => $googleUser->name,
+                'has_avatar' => !empty($googleUser->avatar),
+            ]);
+            
             // Check if user already exists
-            $user = User::where('email', $googleUser->email)->first();
+            $user = UserAuth::where('email', $googleUser->email)->first();
             
             if ($user) {
                 // User exists, check if they can login
                 if (!$user->canLogin()) {
+                    Log::warning('Google OAuth login blocked - user cannot login', [
+                        'user_id' => $user->user_id,
+                        'email' => $user->email,
+                        'active' => $user->active,
+                        'suspended' => $user->suspended,
+                    ]);
                     return redirect('/login')->with('error', 'Your account is suspended or inactive.');
                 }
                 
                 Auth::login($user);
+                
+                Log::info('Google OAuth login successful', [
+                    'user_id' => $user->user_id,
+                    'email' => $user->email,
+                    'ip' => request()->ip(),
+                ]);
+                
                 return redirect('/dashboard')->with('success', 'Successfully logged in with Google!');
             } else {
                 // Create new user
-                $user = User::create([
+                Log::info('Creating new user from Google OAuth', [
+                    'email' => $googleUser->email,
+                    'name' => $googleUser->name,
+                ]);
+                
+                $defaultRoleId = $this->getDefaultRoleId();
+                
+                if (!$defaultRoleId) {
+                    Log::error('Cannot create user: no default role found');
+                    return redirect('/login')->with('error', 'Account creation failed. Please contact support.');
+                }
+                
+                $user = UserAuth::create([
                     'email' => $googleUser->email,
                     'email_verified_at' => now(), // Google emails are already verified
                     'password' => Hash::make(Str::random(24)), // Random password since they use Google
                     'active' => true,
                     'suspended' => false,
-                    'role_id' => 1, // Default to 'user' role
+                    'role_id' => $defaultRoleId,
                 ]);
 
-                // Create user profile
-                UserProfile::create([
-                    'user_id' => $user->user_id, // Note: using user_id since that's the primary key
-                    'alias' => $googleUser->name, // Using name as alias since it's required
-                    'first_name' => $googleUser->user['given_name'] ?? '',
-                    'last_name' => $googleUser->user['family_name'] ?? '',
-                    'image_url' => $googleUser->avatar,
-                    'bio' => '',
+                // Create user profile with default preferences including email notifications
+                $profile = $this->createDefaultProfile($user, $googleUser);
+
+                Log::info('New user and profile created via Google OAuth', [
+                    'user_id' => $user->user_id,
+                    'email' => $user->email,
+                    'profile_id' => $profile->id,
+                    'alias' => $profile->alias,
+                    'ip' => request()->ip(),
                 ]);
 
                 Auth::login($user);
+                
                 return redirect('/dashboard')->with('success', 'Account created and logged in successfully!');
             }
             
         } catch (Exception $e) {
+            Log::error('Google OAuth error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'ip' => request()->ip(),
+                'session_id' => session()->getId(),
+            ]);
+            
+            // Clear OAuth session flags on error
+            session()->forget(['google_oauth_started', 'oauth_start_time']);
+            
             return redirect('/login')->with('error', 'Something went wrong with Google authentication. Please try again.');
         }
+    }
+
+    /**
+     * Get the default role ID for new users.
+     *
+     * @return int|null
+     */
+    protected function getDefaultRoleId(): ?int
+    {
+        $userRole = Role::where('role', 'user')->first();
+        return $userRole ? $userRole->role_id : null;
+    }
+
+    /**
+     * Create a default profile for Google OAuth users.
+     *
+     * @param UserAuth $user
+     * @param $googleUser
+     * @return UserProfile
+     */
+    protected function createDefaultProfile(UserAuth $user, $googleUser): UserProfile
+    {
+        // Generate unique alias from Google data
+        $alias = $this->generateUniqueAlias($googleUser);
+        
+        return UserProfile::create([
+            'user_id' => $user->user_id,
+            'alias' => $alias,
+            'first_name' => $googleUser->user['given_name'] ?? null,
+            'last_name' => $googleUser->user['family_name'] ?? null,
+            'image_url' => $googleUser->avatar ?? null,
+            'bio' => null,
+            'preferences' => $this->getDefaultPreferences(),
+        ]);
+    }
+
+    /**
+     * Generate a unique alias from Google user data.
+     *
+     * @param $googleUser
+     * @return string
+     */
+    protected function generateUniqueAlias($googleUser): string
+    {
+        // Try to use the name part before @ from email
+        $baseAlias = explode('@', $googleUser->email)[0];
+        
+        // Clean the alias (remove non-alphanumeric characters)
+        $baseAlias = preg_replace('/[^a-zA-Z0-9]/', '', $baseAlias);
+        
+        // Ensure minimum length
+        if (strlen($baseAlias) < 3) {
+            $baseAlias = 'user' . time();
+        }
+        
+        $alias = $baseAlias;
+        $counter = 1;
+        
+        // Ensure uniqueness
+        while (UserProfile::where('alias', $alias)->exists()) {
+            $alias = $baseAlias . $counter;
+            $counter++;
+        }
+        
+        return $alias;
+    }
+
+    /**
+     * Get default preferences for new users.
+     *
+     * @return array
+     */
+    protected function getDefaultPreferences(): array
+    {
+        return [
+            'darkmode' => false,
+            'email_notifications' => [
+                'event_updates' => true,
+                'volunteer_opportunities' => true,
+                'newsletter' => false,
+                'account_security' => true,
+                'marketing' => false,
+            ],
+        ];
     }
 }

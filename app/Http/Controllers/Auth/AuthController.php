@@ -91,6 +91,9 @@ class AuthController extends Controller
             // Auto-login after registration
             $this->authService->login($user->email, $request->input('password'));
 
+            // Check if user needs to complete profile setup
+            $redirectUrl = $user->hasCompletedProfileSetup() ? '/dashboard' : '/profile-setup';
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
@@ -104,11 +107,15 @@ class AuthController extends Controller
                         'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
                     ],
-                    'redirect_url' => '/dashboard'
+                    'redirect_url' => $redirectUrl
                 ], 201);
             }
 
-            return redirect('/dashboard')->with('success', 'Registration successful! Welcome to Eventara.');
+            $message = $redirectUrl === '/profile-setup' 
+                ? 'Registration successful! Please complete your profile setup.'
+                : 'Registration successful! Welcome to Eventara.';
+
+            return redirect($redirectUrl)->with('success', $message);
 
         } catch (ValidationException $e) {
             return $this->handleValidationErrors($request, $e->errors());

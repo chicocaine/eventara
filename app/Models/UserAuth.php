@@ -198,4 +198,12 @@ class UserAuth extends Authenticatable
     {
         $this->update(['suspended' => false]);
     }
+
+    /**
+     * Check if user has completed their profile setup.
+     */
+    public function hasCompletedProfileSetup(): bool
+    {
+        return $this->profile !== null;
+    }
 }

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AuthContextType, User, LoginCredentials, RegisterCredentials, AuthResponse, PasswordResetResponse } from '../types/auth.js';
+import type { AuthContextType, User, LoginCredentials, RegisterCredentials, AuthResponse, PasswordResetResponse, ProfileSetupRequest, ProfileSetupResponse } from '../types/auth.js';
 import { authService } from '../services/authService.js';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,6 +120,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const setupProfile = async (profileData: ProfileSetupRequest): Promise<ProfileSetupResponse> => {
+    try {
+      const response = await authService.setupProfile(profileData);
+      
+      // Update user in context if successful
+      if (response.success && response.user) {
+        setUser(response.user);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Setup profile failed:', error);
+      return {
+        success: false,
+        message: 'Failed to setup profile. Please try again.',
+        errors: { general: ['An unexpected error occurred'] }
+      };
+    }
+  };
+
+  const skipProfileSetup = async (): Promise<ProfileSetupResponse> => {
+    try {
+      const response = await authService.skipProfileSetup();
+      
+      // Update user in context if successful
+      if (response.success && response.user) {
+        setUser(response.user);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Skip profile setup failed:', error);
+      return {
+        success: false,
+        message: 'Failed to skip profile setup. Please try again.',
+        errors: { general: ['An unexpected error occurred'] }
+      };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
@@ -127,6 +167,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     forgotPassword,
     resetPassword,
+    setupProfile,
+    skipProfileSetup,
     isLoading,
     isAuthenticated: !!user,
   };
