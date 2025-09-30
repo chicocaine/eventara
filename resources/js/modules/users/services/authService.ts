@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
-import type { LoginCredentials, RegisterCredentials, AuthResponse, User, PasswordResetResponse } from '../types/auth.js';
+import type { LoginCredentials, RegisterCredentials, AuthResponse, User, PasswordResetResponse, ProfileSetupRequest, ProfileSetupResponse } from '../types/auth.js';
 
 // Set up axios defaults
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -195,6 +195,74 @@ class AuthService {
       return response.data;
     } catch (error: any) {
       console.error('Reset password error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      
+      return {
+        success: false,
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
+        errors: { general: ['Unable to connect to server'] }
+      };
+    }
+  }
+
+  /**
+   * Setup user profile after registration
+   */
+  async setupProfile(profileData: ProfileSetupRequest): Promise<ProfileSetupResponse> {
+    try {
+      console.log('Attempting profile setup to:', `/api/profile/setup`);
+      
+      const response: AxiosResponse<ProfileSetupResponse> = await axios.post(`/api/profile/setup`, profileData, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      });
+
+      console.log('Profile setup response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Profile setup error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      
+      return {
+        success: false,
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
+        errors: { general: ['Unable to connect to server'] }
+      };
+    }
+  }
+
+  /**
+   * Skip profile setup and create default profile
+   */
+  async skipProfileSetup(): Promise<ProfileSetupResponse> {
+    try {
+      console.log('Attempting skip profile setup to:', `/api/profile/skip-setup`);
+      
+      const response: AxiosResponse<ProfileSetupResponse> = await axios.post(`/api/profile/skip-setup`, {}, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        }
+      });
+
+      console.log('Skip profile setup response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Skip profile setup error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       

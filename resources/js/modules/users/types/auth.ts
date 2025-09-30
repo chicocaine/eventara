@@ -30,6 +30,49 @@ export interface ResetPasswordRequest {
   password_confirmation: string;
 }
 
+export interface UserPreferences {
+  darkmode: boolean;
+  email_notifications: {
+    event_updates: boolean;
+    volunteer_opportunities: boolean;
+    newsletter: boolean;
+    account_security: boolean;
+    marketing: boolean;
+  };
+}
+
+export interface ProfileSetupRequest {
+  alias: string;
+  first_name?: string;
+  last_name?: string;
+  image_url?: string;
+  bio?: string;
+  preferences?: UserPreferences;
+}
+
+export interface ProfileSetupResponse {
+  success: boolean;
+  message: string;
+  user?: User;
+  profile?: UserProfile;
+  errors?: Record<string, string[]>;
+}
+
+export interface UserProfile {
+  id: number;
+  user_id: number;
+  alias: string;
+  first_name?: string;
+  last_name?: string;
+  image_url?: string;
+  bio?: string;
+  preferences?: UserPreferences;
+  certifika_wallet?: string;
+  full_name?: string;
+  display_name: string;
+  initials: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   message: string;
@@ -59,6 +102,8 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<PasswordResetResponse>;
   resetPassword: (email: string, code: string, password: string, passwordConfirmation: string) => Promise<PasswordResetResponse>;
+  setupProfile: (profileData: ProfileSetupRequest) => Promise<ProfileSetupResponse>;
+  skipProfileSetup: () => Promise<ProfileSetupResponse>;
   isLoading: boolean;
   isAuthenticated: boolean;
 }

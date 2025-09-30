@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\ProfileSetupController;
 use App\Http\Controllers\Auth\ReactivationController;
+use App\Http\Controllers\Auth\GoogleAuth;
 use Illuminate\Support\Facades\Route;
 
 // Authentication routes
@@ -22,6 +24,10 @@ Route::post('/password-reset/send-code', [PasswordResetController::class, 'sendC
 Route::post('/password-reset/reset-password', [PasswordResetController::class, 'resetPassword'])->name('api.password-reset.reset-password');
 Route::post('/password-reset/check-status', [PasswordResetController::class, 'checkStatus'])->name('api.password-reset.check-status');
 
+// Profile Setup routes (authentication checked in controller)
+Route::post('/profile/setup', [ProfileSetupController::class, 'setupProfile'])->name('api.profile.setup');
+Route::post('/profile/skip-setup', [ProfileSetupController::class, 'skipProfileSetup'])->name('api.profile.skip-setup');
+
 // Google OAuth routes
-Route::get('/auth/google/redirect', [AuthController::class, 'redirectToGoogle'])->name('api.google.redirect');
-Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('api.google.callback');
+Route::get('/auth/google/redirect', [GoogleAuth::class, 'redirectToGoogle'])->name('api.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuth::class, 'handleGoogleCallback'])->name('api.google.callback');

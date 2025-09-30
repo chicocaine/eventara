@@ -11,6 +11,7 @@ import {
 } from './modules/users/index.js';
 import ForgotPasswordForm from './modules/users/components/ForgotPasswordForm.js';
 import ResetPasswordForm from './modules/users/components/ResetPasswordForm.js';
+import ProfileSetupForm from './modules/users/components/ProfileSetupForm.js';
 
 function App() {
     return (
@@ -23,6 +24,16 @@ function App() {
                     <Route path="/forgot-password" element={<ForgotPasswordForm />} />
                     <Route path="/reset-password" element={<ResetPasswordForm />} />
                     <Route path="/reactivate" element={<ReactivationPage />} />
+                    
+                    {/* Semi-protected routes (user must be authenticated) */}
+                    <Route 
+                        path="/profile-setup" 
+                        element={
+                            <ProtectedRoute redirectTo="/login">
+                                <ProfileSetupForm />
+                            </ProtectedRoute>
+                        } 
+                    />
                     
                     {/* Protected routes */}
                     <Route 

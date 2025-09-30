@@ -23,11 +23,11 @@ export default function RegisterForm() {
     const response = await register(credentials);
     
     if (response.success) {
-      // Redirect to dashboard or intended page
+      // Navigate to the appropriate page after successful registration
       if (response.redirect_url) {
-        window.location.href = response.redirect_url;
+        navigate(response.redirect_url);
       } else {
-        navigate('/dashboard');
+        navigate('/profile-setup');
       }
     } else {
       setMessage(response.message);
