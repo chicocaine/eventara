@@ -2,6 +2,9 @@
 export { default as LoginPage } from './pages/LoginPage.js';
 export { default as RegisterPage } from './pages/RegisterPage.js';
 export { default as DashboardPage } from './pages/DashboardPage.js';
+export { default as EventsPage } from './pages/EventsPage.js';
+export { default as VenuesPage } from './pages/VenuesPage.js';
+export { default as VolunteersPage } from './pages/VolunteersPage.js';
 export { default as ReactivationPage } from './pages/ReactivationPage.js';
 
 // Components
