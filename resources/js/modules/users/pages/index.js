@@ -1,0 +1,9 @@
+export { default as LoginPage } from './LoginPage.js';
+export { default as RegisterPage } from './RegisterPage.js';
+export { default as ForgotPasswordPage } from './ForgotPasswordPage.js';
+export { default as ResetPasswordPage } from './ResetPasswordPage.js';
+export { default as ProfileSetupPage } from './ProfileSetupPage.js';
+export { default as DashboardPage } from './DashboardPage.js';
+export { default as EventsPage } from './EventsPage.js';
+export { default as VenuesPage } from './VenuesPage.js';
+export { default as VolunteersPage } from './VolunteersPage.js';

@@ -6,6 +6,9 @@ import {
   LoginPage, 
   RegisterPage, 
   DashboardPage,
+  EventsPage,
+  VenuesPage,
+  VolunteersPage,
   ReactivationPage,
   ProtectedRoute 
 } from './modules/users/index.js';
@@ -41,6 +44,30 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <DashboardPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/events" 
+                        element={
+                            <ProtectedRoute>
+                                <EventsPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/venues" 
+                        element={
+                            <ProtectedRoute>
+                                <VenuesPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/volunteers" 
+                        element={
+                            <ProtectedRoute>
+                                <VolunteersPage />
                             </ProtectedRoute>
                         } 
                     />
