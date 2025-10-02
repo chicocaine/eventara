@@ -36,6 +36,7 @@ return new class extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('image_url')->nullable();
+            $table->string('banner_url')->nullable();
             $table->text('bio')->nullable();
             $table->jsonb('preferences')->nullable();
             $table->string('certifika_wallet')->nullable();

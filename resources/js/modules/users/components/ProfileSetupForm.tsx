@@ -19,6 +19,7 @@ export default function ProfileSetupForm() {
     first_name: '',
     last_name: '',
     image_url: '',
+    banner_url: '',
     bio: '',
     preferences: { 
       darkmode: false,
@@ -269,6 +270,30 @@ export default function ProfileSetupForm() {
               {errors.image_url && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.image_url.join(', ')}
+                </p>
+              )}
+            </div>
+
+            {/* Banner URL Field */}
+            <div>
+              <label htmlFor="banner_url" className="block text-sm font-medium text-gray-700">
+                Profile Banner URL
+              </label>
+              <input
+                id="banner_url"
+                name="banner_url"
+                type="url"
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                  errors.banner_url ? 'border-red-300' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                placeholder="https://example.com/your-banner.jpg"
+                value={profileData.banner_url}
+                onChange={handleInputChange('banner_url')}
+                disabled={isLoading || isSkipping}
+              />
+              {errors.banner_url && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.banner_url.join(', ')}
                 </p>
               )}
             </div>

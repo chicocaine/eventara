@@ -46,6 +46,7 @@ export interface ProfileSetupRequest {
   first_name?: string;
   last_name?: string;
   image_url?: string;
+  banner_url?: string;
   bio?: string;
   preferences?: UserPreferences;
 }
@@ -65,6 +66,7 @@ export interface UserProfile {
   first_name?: string;
   last_name?: string;
   image_url?: string;
+  banner_url?: string;
   bio?: string;
   preferences?: UserPreferences;
   certifika_wallet?: string;

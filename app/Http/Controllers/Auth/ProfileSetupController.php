@@ -43,6 +43,7 @@ class ProfileSetupController extends Controller
             'first_name' => 'nullable|string|max:100',
             'last_name' => 'nullable|string|max:100',
             'image_url' => 'nullable|url|max:500',
+            'banner_url' => 'nullable|url|max:500',
             'bio' => 'nullable|string|max:1000',
             'preferences' => 'nullable|array',
             'preferences.darkmode' => 'nullable|boolean',
@@ -69,6 +70,7 @@ class ProfileSetupController extends Controller
                 'first_name' => $request->input('first_name'),
                 'last_name' => $request->input('last_name'),
                 'image_url' => $request->input('image_url') ?: $this->getDefaultImageUrl(),
+                'banner_url' => $request->input('banner_url') ?: $this->getDefaultBannerUrl(),
                 'bio' => $request->input('bio'),
                 'preferences' => $request->input('preferences') ?: $this->getDefaultPreferences(),
             ];
@@ -97,6 +99,7 @@ class ProfileSetupController extends Controller
                     'first_name' => $profile->first_name,
                     'last_name' => $profile->last_name,
                     'image_url' => $profile->image_url,
+                    'banner_url' => $profile->banner_url,
                     'bio' => $profile->bio,
                     'preferences' => $profile->preferences,
                     'full_name' => $profile->full_name,
@@ -152,6 +155,7 @@ class ProfileSetupController extends Controller
                 'first_name' => null,
                 'last_name' => null,
                 'image_url' => $this->getDefaultImageUrl(),
+                'banner_url' => $this->getDefaultBannerUrl(),
                 'bio' => null,
                 'preferences' => $this->getDefaultPreferences(),
             ];
@@ -180,6 +184,7 @@ class ProfileSetupController extends Controller
                     'first_name' => $profile->first_name,
                     'last_name' => $profile->last_name,
                     'image_url' => $profile->image_url,
+                    'banner_url' => $profile->banner_url,
                     'bio' => $profile->bio,
                     'preferences' => $profile->preferences,
                     'full_name' => $profile->full_name,
@@ -232,6 +237,17 @@ class ProfileSetupController extends Controller
     {
         // You can replace this with your default avatar service
         return 'https://ui-avatars.com/api/?size=200&background=4f46e5&color=ffffff&name=User';
+    }
+
+    /**
+     * Get default banner URL.
+     *
+     * @return string|null
+     */
+    private function getDefaultBannerUrl(): ?string
+    {
+        // Return null for default banner - no default banner needed
+        return null;
     }
 
     /**

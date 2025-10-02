@@ -22,6 +22,7 @@ class UserProfile extends Model
         'first_name',
         'last_name',
         'image_url',
+        'banner_url',
         'bio',
         'preferences',
         'certifika_wallet',
