@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MainLayout } from '../../../shared/layouts/index.js';
 import { certifikaService } from '../services/certifikaService.js';
 import type { CertifikaProfile, CertifikaResponse } from '../services/certifikaService.js';
 import QrScanner from '../components/certifika/QrScanner.js';
@@ -70,8 +71,8 @@ export default function CertifikaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <MainLayout>
+      <div className="p-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -108,35 +109,13 @@ export default function CertifikaPage() {
           {/* Profile Details */}
           {profile?.has_certifika_wallet && (
             <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {profile.certifika_name && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Name
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">{profile.certifika_name}</p>
-                  </div>
-                )}
-                
-                {profile.certifika_email && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Email
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">{profile.certifika_email}</p>
-                  </div>
-                )}
-                
-                {profile.verified_at && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Verified
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {new Date(profile.verified_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Wallet Address
+                </label>
+                <p className="mt-1 text-sm text-gray-900 font-mono">
+                  {profile.wallet_address}
+                </p>
               </div>
             </div>
           )}
@@ -261,6 +240,6 @@ export default function CertifikaPage() {
           )}
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

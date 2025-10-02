@@ -64,10 +64,10 @@ class CertifikaController extends Controller
             ], 400);
         }
 
-        // Save user Certifika information
+        // Save user Certifika wallet address
         $saved = $this->certifikaService->saveUserCertifikaInfo(
             $user->user_id,
-            $verificationResult['data']
+            $verificationResult['wallet_address']
         );
 
         if (!$saved) {
@@ -196,10 +196,6 @@ class CertifikaController extends Controller
             'data' => [
                 'has_certifika_wallet' => !empty($profile->certifika_wallet),
                 'wallet_address' => $profile->certifika_wallet,
-                'certifika_name' => $profile->certifika_name,
-                'certifika_email' => $profile->certifika_email,
-                'profile_url' => $profile->certifika_profile_url,
-                'verified_at' => $profile->certifika_verified_at?->toISOString(),
             ],
         ]);
     }

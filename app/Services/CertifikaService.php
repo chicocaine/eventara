@@ -99,17 +99,15 @@ class CertifikaService
     }
 
     /**
-     * Save user Certifika information to profile.
+     * Save user Certifika wallet address to profile.
      *
      * @param int $userId
-     * @param array $certifikaData
+     * @param string $walletAddress
      * @return bool
      */
-    public function saveUserCertifikaInfo(int $userId, array $certifikaData): bool
+    public function saveUserCertifikaInfo(int $userId, string $walletAddress): bool
     {
         try {
-            $user = $certifikaData['user'] ?? [];
-            
             $profile = UserProfile::where('user_id', $userId)->first();
             if (!$profile) {
                 Log::error('User profile not found', ['user_id' => $userId]);
@@ -117,19 +115,16 @@ class CertifikaService
             }
 
             $profile->update([
-                'certifika_wallet' => $user['walletAddress'] ?? null,
-                'certifika_email' => $user['email'] ?? null,
-                'certifika_name' => $user['name'] ?? null,
-                'certifika_profile_url' => $user['profileMediaUrl'] ?? null,
-                'certifika_verified_at' => now(),
+                'certifika_wallet' => $walletAddress,
             ]);
 
             return true;
 
         } catch (\Exception $e) {
-            Log::error('Error saving Certifika user info', [
+            Log::error('Error saving Certifika wallet address', [
                 'error' => $e->getMessage(),
                 'user_id' => $userId,
+                'wallet_address' => $walletAddress,
             ]);
 
             return false;

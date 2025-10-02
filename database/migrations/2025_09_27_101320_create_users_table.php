@@ -39,16 +39,9 @@ return new class extends Migration
             $table->string('banner_url')->nullable();
             $table->text('bio')->nullable();
             $table->jsonb('preferences')->nullable();
-            
-            // Certifika integration fields
-            $table->string('certifika_wallet')->nullable();
-            $table->string('certifika_name')->nullable();
-            $table->string('certifika_email')->nullable();
-            $table->string('certifika_profile_url')->nullable();
-            $table->timestampTz('certifika_verified_at')->nullable();
-            
-            $table->timestampsTz();
 
+            $table->string('certifika_wallet')->nullable();
+            $table->timestampsTz();
             $table->index('alias');
             $table->index('first_name');
             $table->index('last_name');

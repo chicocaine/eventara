@@ -35,10 +35,6 @@ export interface CertifikaUserNft {
 export interface CertifikaProfile {
   has_certifika_wallet: boolean;
   wallet_address?: string;
-  certifika_name?: string;
-  certifika_email?: string;
-  profile_url?: string;
-  verified_at?: string;
 }
 
 export interface CertifikaResponse<T = any> {
