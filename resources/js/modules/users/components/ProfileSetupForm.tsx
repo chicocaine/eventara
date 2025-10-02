@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import type { ProfileSetupRequest } from '../types/auth.js';
+import FileUpload from '../../../shared/components/FileUpload.js';
 
 export default function ProfileSetupForm() {
   const { user, setupProfile, skipProfileSetup, isLoading } = useAuth();
@@ -35,6 +36,7 @@ export default function ProfileSetupForm() {
   
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [message, setMessage] = useState<string>('');
+  const [uploadErrors, setUploadErrors] = useState<Record<string, string>>({});
   const [isSkipping, setIsSkipping] = useState(false);
 
   // Redirect to dashboard if no user (should be authenticated)
@@ -134,6 +136,26 @@ export default function ProfileSetupForm() {
         }
       }
     }));
+  };
+
+  const handleImageUploadSuccess = (type: 'image_url' | 'banner_url') => (url: string) => {
+    setProfileData(prev => ({ ...prev, [type]: url }));
+    // Clear any existing upload errors for this field
+    setUploadErrors(prev => ({ ...prev, [type]: '' }));
+    // Clear form errors for this field if any
+    if (errors[type]) {
+      setErrors(prev => ({ ...prev, [type]: [] }));
+    }
+  };
+
+  const handleImageUploadError = (type: 'image_url' | 'banner_url') => (error: string) => {
+    setUploadErrors(prev => ({ ...prev, [type]: error }));
+  };
+
+  const handleImageUrlChange = (type: 'image_url' | 'banner_url') => (url: string) => {
+    setProfileData(prev => ({ ...prev, [type]: url }));
+    // Clear upload errors when manually entering URL
+    setUploadErrors(prev => ({ ...prev, [type]: '' }));
   };
 
   if (isLoading) {
@@ -250,50 +272,52 @@ export default function ProfileSetupForm() {
               )}
             </div>
 
-            {/* Image URL Field */}
+            {/* Profile Image Upload */}
             <div>
-              <label htmlFor="image_url" className="block text-sm font-medium text-gray-700">
-                Profile Image URL
-              </label>
-              <input
-                id="image_url"
-                name="image_url"
-                type="url"
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  errors.image_url ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="https://example.com/your-photo.jpg"
-                value={profileData.image_url}
-                onChange={handleInputChange('image_url')}
+              <FileUpload
+                label="Profile Image"
+                type="profile"
+                currentUrl={profileData.image_url || ''}
+                onUploadSuccess={handleImageUploadSuccess('image_url')}
+                onUploadError={handleImageUploadError('image_url')}
+                onUrlChange={handleImageUrlChange('image_url')}
                 disabled={isLoading || isSkipping}
+                showUrlInput={true}
+                maxSize={2}
               />
               {errors.image_url && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.image_url.join(', ')}
                 </p>
               )}
+              {uploadErrors.image_url && (
+                <p className="mt-1 text-sm text-red-600">
+                  {uploadErrors.image_url}
+                </p>
+              )}
             </div>
 
-            {/* Banner URL Field */}
+            {/* Profile Banner Upload */}
             <div>
-              <label htmlFor="banner_url" className="block text-sm font-medium text-gray-700">
-                Profile Banner URL
-              </label>
-              <input
-                id="banner_url"
-                name="banner_url"
-                type="url"
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  errors.banner_url ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                placeholder="https://example.com/your-banner.jpg"
-                value={profileData.banner_url}
-                onChange={handleInputChange('banner_url')}
+              <FileUpload
+                label="Profile Banner"
+                type="banner"
+                currentUrl={profileData.banner_url || ''}
+                onUploadSuccess={handleImageUploadSuccess('banner_url')}
+                onUploadError={handleImageUploadError('banner_url')}
+                onUrlChange={handleImageUrlChange('banner_url')}
                 disabled={isLoading || isSkipping}
+                showUrlInput={true}
+                maxSize={2}
               />
               {errors.banner_url && (
                 <p className="mt-1 text-sm text-red-600">
                   {errors.banner_url.join(', ')}
+                </p>
+              )}
+              {uploadErrors.banner_url && (
+                <p className="mt-1 text-sm text-red-600">
+                  {uploadErrors.banner_url}
                 </p>
               )}
             </div>

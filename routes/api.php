@@ -27,6 +27,7 @@ Route::post('/password-reset/check-status', [PasswordResetController::class, 'ch
 // Profile Setup routes (authentication checked in controller)
 Route::post('/profile/setup', [ProfileSetupController::class, 'setupProfile'])->name('api.profile.setup');
 Route::post('/profile/skip-setup', [ProfileSetupController::class, 'skipProfileSetup'])->name('api.profile.skip-setup');
+Route::post('/profile/upload-image', [ProfileSetupController::class, 'uploadImage'])->name('api.profile.upload-image');
 
 // Google OAuth routes
 Route::get('/auth/google/redirect', [GoogleAuth::class, 'redirectToGoogle'])->name('api.google.redirect');
