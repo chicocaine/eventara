@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\ProfileSetupController;
 use App\Http\Controllers\Auth\ReactivationController;
 use App\Http\Controllers\Auth\GoogleAuth;
+use App\Http\Controllers\CertifikaController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication routes
@@ -32,3 +33,11 @@ Route::post('/profile/upload-image', [ProfileSetupController::class, 'uploadImag
 // Google OAuth routes
 Route::get('/auth/google/redirect', [GoogleAuth::class, 'redirectToGoogle'])->name('api.google.redirect');
 Route::get('/auth/google/callback', [GoogleAuth::class, 'handleGoogleCallback'])->name('api.google.callback');
+
+// Certifika routes (require authentication)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/certifika/verify-qr', [CertifikaController::class, 'verifyQr'])->name('api.certifika.verify-qr');
+    Route::get('/certifika/nfts', [CertifikaController::class, 'getUserNfts'])->name('api.certifika.nfts');
+    Route::post('/certifika/sync-nfts', [CertifikaController::class, 'syncNfts'])->name('api.certifika.sync-nfts');
+    Route::get('/certifika/profile', [CertifikaController::class, 'getUserProfile'])->name('api.certifika.profile');
+});
