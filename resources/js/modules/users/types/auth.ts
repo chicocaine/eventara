@@ -75,6 +75,17 @@ export interface UserProfile {
   initials: string;
 }
 
+export interface FileUploadResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    url: string;
+    filename: string;
+    type: string;
+  };
+  errors?: Record<string, string[]>;
+}
+
 export interface AuthResponse {
   success: boolean;
   message: string;

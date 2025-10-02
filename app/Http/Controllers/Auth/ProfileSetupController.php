@@ -122,6 +122,88 @@ class ProfileSetupController extends Controller
     }
 
     /**
+     * Upload profile image or banner.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated.',
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // 2MB max
+            'type' => 'required|in:profile,banner',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please check your file and try again.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $file = $request->file('file');
+            $type = $request->input('type');
+            
+            // Generate unique filename
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $extension = $file->getClientOriginalExtension();
+            $filename = "profile_{$type}_{$user->user_id}_{$timestamp}.{$extension}";
+            
+            // Store in public disk under profile_images directory
+            $path = $file->storeAs('profile_images', $filename, 'public');
+            
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload file.',
+                ], 500);
+            }
+
+            // Generate public URL
+            $url = asset('storage/' . $path);
+
+            Log::info('Profile image uploaded', [
+                'user_id' => $user->user_id,
+                'type' => $type,
+                'filename' => $filename,
+                'url' => $url,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => ucfirst($type) . ' image uploaded successfully!',
+                'data' => [
+                    'url' => $url,
+                    'filename' => $filename,
+                    'type' => $type,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Profile image upload failed', [
+                'user_id' => $user->user_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload image. Please try again.',
+            ], 500);
+        }
+    }
+
+    /**
      * Skip profile setup and create default profile.
      *
      * @return JsonResponse
