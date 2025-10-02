@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestampTz('email_verified_at')->nullable();
             $table->string('password');
-            $table->boolean('active');
+            $table->boolean('active')->default(true);
             $table->boolean('suspended')->default(false);
             $table->foreignId('role_id')->constrained('roles', 'role_id')->onDelete('restrict');
             $table->rememberToken();
@@ -36,6 +36,7 @@ return new class extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('image_url')->nullable();
+            $table->string('banner_url')->nullable();
             $table->text('bio')->nullable();
             $table->jsonb('preferences')->nullable();
             $table->string('certifika_wallet')->nullable();

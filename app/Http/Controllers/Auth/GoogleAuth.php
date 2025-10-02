@@ -228,6 +228,7 @@ class GoogleAuth extends Controller
             'first_name' => $googleUser->user['given_name'] ?? null,
             'last_name' => $googleUser->user['family_name'] ?? null,
             'image_url' => $googleUser->avatar ?? null,
+            'banner_url' => null, // No default banner from Google
             'bio' => null,
             'preferences' => $this->getDefaultPreferences(),
         ]);
