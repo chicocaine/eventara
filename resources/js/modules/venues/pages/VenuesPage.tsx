@@ -1,5 +1,5 @@
 import React from 'react';
-import MainLayout from '../components/MainLayout.js';
+import { MainLayout } from '../../../shared/layouts/index.js';
 
 export default function VenuesPage() {
   return (

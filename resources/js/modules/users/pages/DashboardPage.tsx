@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth.js';
-import MainLayout from '../components/MainLayout.js';
+import { MainLayout } from '../../../shared/layouts/index.js';
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();

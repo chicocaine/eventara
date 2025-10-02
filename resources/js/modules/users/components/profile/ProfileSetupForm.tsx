@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js';
-import type { ProfileSetupRequest } from '../types/auth.js';
-import FileUpload from '../../../shared/components/FileUpload.js';
+import { useAuth } from '../../hooks/useAuth.js';
+import type { ProfileSetupRequest } from '../../types/auth.js';
+import FileUpload from '../../../../shared/components/FileUpload.js';
 
 export default function ProfileSetupForm() {
   const { user, setupProfile, skipProfileSetup, isLoading } = useAuth();

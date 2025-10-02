@@ -6,15 +6,15 @@ import {
   LoginPage, 
   RegisterPage, 
   DashboardPage,
-  EventsPage,
-  VenuesPage,
-  VolunteersPage,
   ReactivationPage,
   ProtectedRoute 
 } from './modules/users/index.js';
-import ForgotPasswordForm from './modules/users/components/ForgotPasswordForm.js';
-import ResetPasswordForm from './modules/users/components/ResetPasswordForm.js';
-import ProfileSetupForm from './modules/users/components/ProfileSetupForm.js';
+import EventsPage from './modules/events/pages/EventsPage.js';
+import VenuesPage from './modules/venues/pages/VenuesPage.js';
+import VolunteersPage from './modules/volunteers/pages/VolunteersPage.js';
+import ForgotPasswordForm from './modules/users/components/auth/ForgotPasswordForm.js';
+import ResetPasswordForm from './modules/users/components/auth/ResetPasswordForm.js';
+import ProfileSetupForm from './modules/users/components/profile/ProfileSetupForm.js';
 
 function App() {
     return (

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import type { ResetPasswordRequest, PasswordResetResponse } from '../types/auth.js';
+import type { ResetPasswordRequest, PasswordResetResponse } from '../../types/auth.js';
 
 interface FormData {
   email: string;

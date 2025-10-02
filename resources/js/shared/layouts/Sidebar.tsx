@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js';
+import { useAuth } from '../../modules/users/hooks/useAuth.js';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import type { ForgotPasswordRequest, PasswordResetResponse } from '../types/auth.js';
+import type { ForgotPasswordRequest, PasswordResetResponse } from '../../types/auth.js';
 
 export default function ForgotPasswordForm() {
   const navigate = useNavigate();

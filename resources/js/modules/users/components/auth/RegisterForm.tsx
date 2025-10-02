@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js';
-import type { RegisterCredentials } from '../types/auth.js';
+import { useAuth } from '../../hooks/useAuth.js';
+import type { RegisterCredentials } from '../../types/auth.js';
 
 export default function RegisterForm() {
   const { register, isLoading } = useAuth();
