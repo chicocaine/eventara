@@ -18,8 +18,46 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
   const [scanMethod, setScanMethod] = useState<'camera' | 'upload'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const scanIntervalRef = useRef<number | null>(null);
+
+  // Add a state to force re-render if needed
+  const [videoReady, setVideoReady] = useState(false);
+
+  // Function to play beep sound
+  const playBeepSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800; // 800Hz beep
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Beep sound failed:', error);
+    }
+  };
+
+  // Check if video ref exists when component renders
+  useEffect(() => {
+    console.log('Component mounted, videoRef.current:', !!videoRef.current);
+    if (videoRef.current) {
+      setVideoReady(true);
+      console.log('Video element found and ready');
+    }
+  }, [cameraActive]);
 
   const handleFileSelect = async (file: File) => {
     if (!file) return;
@@ -49,6 +87,7 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
       const verificationResult = await certifikaService.verifyQr(qrContent);
       
       if (verificationResult.success) {
+        playBeepSound(); // Play beep on successful scan
         onSuccess?.(verificationResult);
       } else {
         onError?.(verificationResult.message || 'QR verification failed.');
@@ -92,21 +131,167 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
   };
 
   const startCamera = async () => {
+    console.log('startCamera function called');
+    setCameraLoading(true);
+    setCameraActive(true); // Set this first to ensure video element renders
+    console.log('Camera loading set to true, camera active set to true');
+    
+    // Wait a moment for React to render the video element
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    console.log('After timeout, videoRef.current:', !!videoRef.current);
+    
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.log('getUserMedia not supported');
+      setCameraLoading(false);
+      setCameraActive(false);
+      onError?.('Camera not supported by this browser. Please use file upload instead.');
+      return;
+    }
+    
+    console.log('getUserMedia is supported, proceeding...');
+    
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' } // Prefer back camera
-      });
+      // Try environment camera first, fallback to any camera
+      let mediaStream;
+      console.log('Requesting camera access...');
       
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'environment', // Prefer back camera
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        });
+        console.log('Environment camera obtained');
+      } catch (envError) {
+        console.log('Environment camera not available, trying any camera:', envError);
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          }
+        });
+        console.log('Any camera obtained');
+      }
+      
+      console.log('MediaStream obtained:', mediaStream);
       setStream(mediaStream);
-      setCameraActive(true);
+      console.log('State updated: stream set');
+      
+      // Wait another moment and check again for video ref
+      await new Promise(resolve => setTimeout(resolve, 200));
+      console.log('After second timeout, videoRef.current:', !!videoRef.current);
       
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
+        console.log('Video ref exists, setting up video...');
+        const video = videoRef.current;
+        
+        // Clear any existing source first
+        video.srcObject = null;
+        console.log('Cleared existing video source');
+        
+        // Set the new source after a brief delay
+        setTimeout(() => {
+          console.log('Setting video source...');
+          video.srcObject = mediaStream;
+          console.log('Video source set to:', mediaStream);
+          
+          // Force video to load
+          video.load();
+          console.log('Video load() called');
+          
+          // Add multiple event listeners to ensure we catch when video is ready
+          const clearLoadingState = () => {
+            console.log('Video ready, clearing loading state');
+            console.log('Video element state:', {
+              readyState: video.readyState,
+              videoWidth: video.videoWidth,
+              videoHeight: video.videoHeight,
+              paused: video.paused,
+              muted: video.muted,
+              srcObject: !!video.srcObject
+            });
+            setCameraLoading(false);
+            setTimeout(() => startQrScanning(), 500);
+          };
+          
+          // Listen for multiple video events
+          video.addEventListener('loadedmetadata', clearLoadingState, { once: true });
+          video.addEventListener('canplay', clearLoadingState, { once: true });
+          video.addEventListener('playing', clearLoadingState, { once: true });
+          
+          // Force play after a short delay
+          setTimeout(async () => {
+            try {
+              console.log('Attempting to play video...');
+              await video.play();
+              console.log('Video play() succeeded');
+              setCameraLoading(false);
+            } catch (playError) {
+              console.error('Video play failed:', playError);
+              setCameraLoading(false);
+            }
+          }, 300);
+          
+        }, 100);
+        
+        // Ultimate fallback - clear loading after 3 seconds no matter what
+        setTimeout(() => {
+          if (cameraLoading) {
+            console.log('Force clearing loading state after timeout');
+            console.log('Final video state check:', {
+              hasVideoRef: !!videoRef.current,
+              hasSrcObject: !!videoRef.current?.srcObject,
+              readyState: videoRef.current?.readyState,
+              videoWidth: videoRef.current?.videoWidth,
+              videoHeight: videoRef.current?.videoHeight
+            });
+            setCameraLoading(false);
+          }
+        }, 3000);
+      } else {
+        console.error('Video ref is still null after waiting!');
+        console.log('Retrying in 1 second...');
+        
+        // Try one more time after a longer delay
+        setTimeout(() => {
+          if (videoRef.current && mediaStream) {
+            console.log('Video ref found on retry, setting up...');
+            const video = videoRef.current;
+            video.srcObject = mediaStream;
+            video.play();
+            setCameraLoading(false);
+          } else {
+            console.error('Video ref still null after retry. Camera setup failed.');
+            setCameraLoading(false);
+            onError?.('Failed to initialize camera. Please try again.');
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Camera access error:', error);
-      onError?.('Unable to access camera. Please use file upload instead.');
+      setCameraLoading(false);
+      setCameraActive(false);
+      
+      let errorMessage = 'Unable to access camera. ';
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage += 'Camera permission denied. Please allow camera access and try again.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage += 'No camera found on this device.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage += 'Camera not supported by this browser.';
+        } else {
+          errorMessage += error.message;
+        }
+      } else {
+        errorMessage += 'Please check camera permissions and try again.';
+      }
+      
+      onError?.(errorMessage);
     }
   };
 
@@ -119,6 +304,7 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
       const verificationResult = await certifikaService.verifyQr(qrContent);
       
       if (verificationResult.success) {
+        playBeepSound(); // Play beep on successful scan
         onSuccess?.(verificationResult);
         setCameraActive(false);
       } else {
@@ -138,28 +324,75 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
       setStream(null);
     }
     setCameraActive(false);
+    setCameraLoading(false);
+    stopQrScanning();
   };
 
-  const capturePhoto = () => {
-    if (!videoRef.current) return;
+  const startQrScanning = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+    }
+    
+    scanIntervalRef.current = window.setInterval(() => {
+      scanVideoForQr();
+    }, 500); // Scan every 500ms
+  };
 
-    const canvas = document.createElement('canvas');
+  const stopQrScanning = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+  };
+
+  const scanVideoForQr = async () => {
+    if (!videoRef.current || !canvasRef.current || videoRef.current.readyState !== 4) {
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
     if (!ctx) return;
 
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    ctx.drawImage(videoRef.current, 0, 0);
+    // Draw video frame to canvas
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob(async (blob) => {
-      if (blob) {
-        const file = new File([blob], 'qr-capture.jpg', { type: 'image/jpeg' });
-        await handleFileSelect(file);
-        stopCamera();
-      }
-    }, 'image/jpeg', 0.8);
+    try {
+      // Convert canvas to blob and scan with qr-scanner
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          try {
+            // @ts-ignore - QrScanner static method exists but has TypeScript definition issues
+            const result = await (QrScannerLib as any).scanImage(blob, { 
+              returnDetailedScanResult: true 
+            });
+            
+            const qrContent = typeof result === 'string' ? result : result.data;
+            
+            if (qrContent) {
+              stopQrScanning();
+              handleQrScan(qrContent);
+            }
+          } catch (error) {
+            // No QR code found in this frame, continue scanning
+          }
+        }
+      }, 'image/jpeg', 0.8);
+    } catch (error) {
+      // Scanning error, continue
+    }
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
@@ -289,42 +522,117 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
                   Use Camera to Scan QR Code
                 </p>
                 <button
-                  onClick={startCamera}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  onClick={() => {
+                    console.log('Start Camera button clicked');
+                    startCamera();
+                  }}
+                  disabled={cameraLoading}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Start Camera
+                  {cameraLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Starting Camera...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Start Camera
+                    </>
+                  )}
                 </button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="relative">
-                  <QrReader
-                    constraints={{
-                      facingMode: 'environment' // Prefer back camera
+                  {/* Video element for camera feed - always render when camera is active */}
+                  <video
+                    ref={videoRef}
+                    className="w-full h-80 bg-gray-900 rounded-lg border-2 border-gray-300"
+                    autoPlay
+                    playsInline
+                    muted
+                    controls={false}
+                    style={{ 
+                      display: 'block',
+                      objectFit: 'cover',
+                      transform: 'scaleX(-1)', // Mirror for user-facing camera
+                      minHeight: '320px',
+                      maxHeight: '320px'
                     }}
-                    onResult={(result, error) => {
-                      if (result) {
-                        handleQrScan(result.getText());
-                      }
-                      if (error) {
-                        console.error('QR Scanner Error:', error);
-                      }
+                    onLoadedMetadata={() => {
+                      console.log('Video metadata loaded, dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+                      setCameraLoading(false);
                     }}
-                    scanDelay={300}
-                    videoContainerStyle={{
-                      width: '100%',
-                      height: '300px',
+                    onCanPlay={() => {
+                      console.log('Video can play');
+                      setCameraLoading(false);
                     }}
-                    videoStyle={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
+                    onPlaying={() => {
+                      console.log('Video is playing');
+                      setCameraLoading(false);
+                    }}
+                    onError={(e) => {
+                      console.error('Video error:', e);
+                      setCameraLoading(false);
                     }}
                   />
-                  <div className="absolute inset-0 border-2 border-white border-dashed rounded-lg pointer-events-none opacity-50"></div>
+                  
+                  {/* Loading overlay when camera is loading */}
+                  {cameraLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 rounded-lg">
+                      <div className="text-center">
+                        <svg className="animate-spin mx-auto h-8 w-8 text-white mb-2" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-sm text-white">Loading camera...</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* QR scanning overlay - only show when not loading */}
+                  {!cameraLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-64 h-64 border-2 border-white border-dashed rounded-lg bg-black bg-opacity-20">
+                        <div className="relative w-full h-full">
+                          {/* Corner guides */}
+                          <div className="absolute top-2 left-2 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+                          <div className="absolute top-2 right-2 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+                          <div className="absolute bottom-2 left-2 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+                          <div className="absolute bottom-2 right-2 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg"></div>
+                          
+                          {/* Center text */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <p className="text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded">
+                              Position QR code here
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Debug info overlay */}
+                  <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
+                    Camera: {cameraActive ? 'Active' : 'Inactive'} | 
+                    Loading: {cameraLoading ? 'Yes' : 'No'} |
+                    Stream: {stream ? 'Connected' : 'None'} |
+                    VideoRef: {videoRef.current ? 'Found' : 'Null'}
+                  </div>
+                  
+                  {/* Hidden canvas for QR processing */}
+                  <canvas
+                    ref={canvasRef}
+                    className="hidden"
+                    width="640"
+                    height="480"
+                  />
                 </div>
                 
                 <div className="flex justify-center space-x-3">
@@ -335,6 +643,17 @@ export default function QrScanner({ onSuccess, onError, className = '' }: QrScan
                     <X className="w-4 h-4 mr-2" />
                     Stop Camera
                   </button>
+                  {cameraLoading && (
+                    <button
+                      onClick={() => {
+                        setCameraLoading(false);
+                        startQrScanning();
+                      }}
+                      className="inline-flex items-center px-4 py-2 border border-indigo-300 text-sm font-medium rounded-md shadow-sm text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Force Start Scanning
+                    </button>
+                  )}
                 </div>
               </div>
             )}
