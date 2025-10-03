@@ -207,4 +207,59 @@ class UserAuth extends Authenticatable
     {
         return $this->profile !== null;
     }
+
+    /**
+     * Check if user should be marked as inactive based on last login.
+     * Users are considered inactive if they haven't logged in for 3 months.
+     */
+    public function shouldBeInactive(): bool
+    {
+        if (!$this->active) {
+            return false; // Already inactive
+        }
+
+        if (!$this->last_login) {
+            // If no last login, check account creation date
+            return $this->created_at && $this->created_at->lt(now()->subMonths(3));
+        }
+
+        return $this->last_login->lt(now()->subMonths(3));
+    }
+
+    /**
+     * Mark user as inactive.
+     */
+    public function markInactive(): void
+    {
+        $this->update(['active' => false]);
+    }
+
+    /**
+     * Activate the user.
+     */
+    public function activate(): void
+    {
+        $this->update(['active' => true]);
+    }
+
+    /**
+     * Scope for finding users that should be marked inactive.
+     */
+    public function scopeShouldBeInactive($query)
+    {
+        $threeMonthsAgo = now()->subMonths(3);
+        
+        return $query->where('active', true)
+            ->where(function ($q) use ($threeMonthsAgo) {
+                $q->where(function ($subQ) use ($threeMonthsAgo) {
+                    // Users with last_login older than 3 months
+                    $subQ->whereNotNull('last_login')
+                         ->where('last_login', '<', $threeMonthsAgo);
+                })->orWhere(function ($subQ) use ($threeMonthsAgo) {
+                    // Users with no last_login but created more than 3 months ago
+                    $subQ->whereNull('last_login')
+                         ->where('created_at', '<', $threeMonthsAgo);
+                });
+            });
+    }
 }
