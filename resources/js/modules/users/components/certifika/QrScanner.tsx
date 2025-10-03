@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { QrReader } from 'react-qr-reader';
 // @ts-ignore - QrScanner has some TypeScript issues but works at runtime
 import QrScannerLib from 'qr-scanner';
 import { X } from 'lucide-react';
