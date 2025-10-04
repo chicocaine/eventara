@@ -86,15 +86,31 @@ class GoogleAuth extends Controller
             $user = UserAuth::where('email', $googleUser->email)->first();
             
             if ($user) {
-                // User exists, check if they can login
-                if (!$user->canLogin()) {
-                    Log::warning('Google OAuth login blocked - user cannot login', [
+                // Check if user is suspended first
+                if ($user->suspended) {
+                    Log::warning('Google OAuth login blocked - user suspended', [
+                        'user_id' => $user->user_id,
+                        'email' => $user->email,
+                        'suspended' => $user->suspended,
+                    ]);
+                    return redirect('/login')->with('error', 'Your account has been suspended. Please contact support.');
+                }
+                
+                // Check if user is inactive and needs reactivation
+                if (!$user->active) {
+                    Log::warning('Google OAuth login blocked - user inactive, redirecting to reactivation', [
                         'user_id' => $user->user_id,
                         'email' => $user->email,
                         'active' => $user->active,
-                        'suspended' => $user->suspended,
                     ]);
-                    return redirect('/login')->with('error', 'Your account is suspended or inactive.');
+                    
+                    // Use URL parameters to pass data to React app
+                    $queryParams = http_build_query([
+                        'email' => $user->email,
+                        'message' => 'Your account is inactive. Please reactivate your account to continue.'
+                    ]);
+                    
+                    return redirect('/reactivate?' . $queryParams);
                 }
                 
                 Log::info('Attempting to login existing user', [

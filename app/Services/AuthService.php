@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 
 class AuthService
 {
@@ -134,8 +136,8 @@ class AuthService
         }
     }
 
-    /**
-     * Log out the current user.
+        /**
+     * Log out the authenticated user.
      *
      * @return void
      */
@@ -148,13 +150,23 @@ class AuthService
                 'user_id' => $user->user_id,
                 'email' => $user->email,
             ]);
+            
+            // For Sanctum, revoke the current access token (only if it's a real token, not transient)
+            if (request()->user() && request()->user()->currentAccessToken()) {
+                $token = request()->user()->currentAccessToken();
+                
+                // Check if it's not a TransientToken (which is used for session auth)
+                if (!$token instanceof \Laravel\Sanctum\TransientToken) {
+                    $token->delete();
+                }
+            }
         }
-
-        Auth::logout();
         
-        // Invalidate the session
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        // For session-based auth, invalidate the session
+        if (request()->hasSession()) {
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
     }
 
     /**

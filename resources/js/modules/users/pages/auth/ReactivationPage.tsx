@@ -23,17 +23,31 @@ export default function ReactivationPage({}: ReactivationPageProps) {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // Get email and message from either location state or URL parameters
+  const urlParams = new URLSearchParams(location.search);
+  const emailFromUrl = urlParams.get('email');
+  const messageFromUrl = urlParams.get('message');
+  
   const [formData, setFormData] = useState<FormData>({
-    email: location.state?.email || '',
+    email: location.state?.email || emailFromUrl || '',
     code: '',
   });
   
   const [isLoading, setIsLoading] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    location.state?.message ? { type: 'error', text: location.state.message } : null
-  );
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(() => {
+    // Prioritize location state, then URL parameters
+    const stateMessage = location.state?.message;
+    const urlMessage = messageFromUrl;
+    
+    if (stateMessage) {
+      return { type: 'error', text: stateMessage };
+    } else if (urlMessage) {
+      return { type: 'error', text: urlMessage };
+    }
+    return null;
+  });
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [remainingAttempts, setRemainingAttempts] = useState<number>(5);
 
@@ -44,6 +58,15 @@ export default function ReactivationPage({}: ReactivationPageProps) {
       codeInput?.focus();
     }
   }, [isCodeSent]);
+
+  // Clean up URL parameters after they're processed to prevent them from persisting in browser history
+  useEffect(() => {
+    if (emailFromUrl || messageFromUrl) {
+      // Replace the current URL without the parameters, but keep the message in state
+      const newUrl = `${location.pathname}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [emailFromUrl, messageFromUrl, location.pathname]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

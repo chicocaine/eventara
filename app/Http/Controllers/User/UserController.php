@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserAuth;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,12 @@ use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
+    protected AuthService $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
     /**
      * Get user settings.
      */
@@ -140,8 +147,8 @@ class UserController extends Controller
             'email' => $user->email,
         ]);
 
-        // Logout the user
-        Auth::logout();
+        // Logout the user using AuthService
+        $this->authService->logout();
 
         return response()->json([
             'success' => true,
