@@ -2,6 +2,8 @@ export interface User {
   id: number;
   email: string;
   display_name: string;
+  name?: string; // For Google OAuth
+  avatar?: string; // For Google OAuth profile picture
   role?: string;
   active?: boolean;
   is_volunteer?: boolean;
@@ -45,9 +47,15 @@ export interface ProfileSetupRequest {
   alias: string;
   first_name?: string;
   last_name?: string;
+  contact_phone?: string;
+  mailing_address?: string;
   image_url?: string;
   banner_url?: string;
   bio?: string;
+  links?: Array<{
+    platform: string;
+    url: string;
+  }>;
   preferences?: UserPreferences;
 }
 
