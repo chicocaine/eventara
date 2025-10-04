@@ -8,6 +8,7 @@ import type { CertifikaProfile, CertifikaResponse } from '../services/certifikaS
 import ProfileDetailsTab from '../components/ProfileDetailsTab.js';
 import VenuePostsTab from '../components/VenuePostsTab.js';
 import CertifikaTab from '../components/CertifikaTab.js';
+import SettingsTab from '../components/SettingsTab.js';
 
 interface ProfilePageProps {}
 
@@ -16,7 +17,7 @@ export default function ProfilePage({}: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'posts' | 'certifika'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'posts' | 'certifika' | 'settings'>('details');
   
   // Form state
   const [isEditing, setIsEditing] = useState(false);
@@ -526,6 +527,16 @@ export default function ProfilePage({}: ProfilePageProps) {
                   >
                     Certifika
                   </button>
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className={`py-4 px-6 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                      activeTab === 'settings'
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Settings
+                  </button>
                 </nav>
               </div>
 
@@ -565,6 +576,11 @@ export default function ProfilePage({}: ProfilePageProps) {
                     onQrSuccess={handleCertifikaQrSuccess}
                     onQrError={handleCertifikaQrError}
                   />
+                )}
+
+                {/* Settings Tab Content */}
+                {activeTab === 'settings' && (
+                  <SettingsTab />
                 )}
               </div>
             </div>

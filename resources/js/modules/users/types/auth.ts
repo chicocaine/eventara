@@ -21,6 +21,27 @@ export interface RegisterCredentials {
   password_confirmation: string;
 }
 
+export interface RegisterWithPrivacyCredentials extends RegisterCredentials {
+  privacy_settings?: {
+    dark_mode?: boolean;
+    notifications?: {
+      email_notifications?: boolean;
+      push_notifications?: boolean;
+      event_reminders?: boolean;
+      venue_updates?: boolean;
+      security_alerts?: boolean;
+    };
+    privacy?: {
+      profile_visibility?: 'public' | 'private' | 'friends';
+      show_online_status?: boolean;
+      allow_friend_requests?: boolean;
+      show_activity_status?: boolean;
+      data_collection_consent?: boolean;
+      marketing_emails_consent?: boolean;
+    };
+  };
+}
+
 export interface ForgotPasswordRequest {
   email: string;
 }
