@@ -7,7 +7,6 @@ export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isDashboardMenuOpen, setIsDashboardMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -24,13 +23,6 @@ export default function Sidebar() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
         </svg>
       ),
-      hasSubmenu: true,
-      submenu: [
-        {
-          name: 'Certifika',
-          href: '/certifika',
-        },
-      ],
     },
     {
       name: 'Events',
@@ -66,20 +58,6 @@ export default function Sidebar() {
     return location.pathname === href;
   };
 
-  const isActiveParent = (item: any) => {
-    if (item.hasSubmenu) {
-      return item.submenu.some((subItem: any) => location.pathname === subItem.href);
-    }
-    return false;
-  };
-
-  // Auto-expand dashboard if we're on certifika page
-  useEffect(() => {
-    if (location.pathname === '/certifika') {
-      setIsDashboardMenuOpen(true);
-    }
-  }, [location.pathname]);
-
   // Get user initials for avatar fallback
   const getUserInitials = () => {
     if (user?.display_name) {
@@ -111,99 +89,24 @@ export default function Sidebar() {
       {/* Navigation Links */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navigation.map((item) => (
-          <div key={item.name}>
-            {item.hasSubmenu ? (
-              <div>
-                <div className="flex items-center">
-                  {/* Main Dashboard Link */}
-                  <Link
-                    to={item.href}
-                    className={`group flex-1 flex items-center px-3 py-2 text-sm font-medium rounded-l-md transition-colors duration-200 ${
-                      isActiveLink(item.href)
-                        ? 'bg-indigo-100 text-indigo-700 border-r-2 border-indigo-500'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    <span
-                      className={`mr-3 flex-shrink-0 ${
-                        isActiveLink(item.href) || isActiveParent(item) ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    {item.name}
-                  </Link>
-                  
-                  {/* Expand/Collapse Arrow Button */}
-                  <button
-                    onClick={() => {
-                      if (item.name === 'Dashboard') {
-                        setIsDashboardMenuOpen(!isDashboardMenuOpen);
-                      }
-                    }}
-                    className={`px-2 py-2 text-sm font-medium rounded-r-md transition-colors duration-200 ${
-                      isActiveLink(item.href) || isActiveParent(item)
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        isDashboardMenuOpen ? 'transform rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </div>
-                
-                {/* Submenu */}
-                {isDashboardMenuOpen && (
-                  <div className="mt-1 ml-6 space-y-1">
-                    {item.submenu.map((subItem: any) => (
-                      <Link
-                        key={subItem.name}
-                        to={subItem.href}
-                        className={`group flex items-center px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                          isActiveLink(subItem.href)
-                            ? 'bg-indigo-100 text-indigo-700 border-r-2 border-indigo-500 font-medium'
-                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                        }`}
-                      >
-                        {subItem.name === 'Certifika' && (
-                          <svg className="w-4 h-4 mr-2 flex-shrink-0 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                          </svg>
-                        )}
-                        {subItem.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                to={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                  isActiveLink(item.href)
-                    ? 'bg-indigo-100 text-indigo-700 border-r-2 border-indigo-500'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <span
-                  className={`mr-3 flex-shrink-0 ${
-                    isActiveLink(item.href) ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'
-                  }`}
-                >
-                  {item.icon}
-                </span>
-                {item.name}
-              </Link>
-            )}
-          </div>
+          <Link
+            key={item.name}
+            to={item.href}
+            className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+              isActiveLink(item.href)
+                ? 'bg-indigo-100 text-indigo-700 border-r-2 border-indigo-500'
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <span
+              className={`mr-3 flex-shrink-0 ${
+                isActiveLink(item.href) ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'
+              }`}
+            >
+              {item.icon}
+            </span>
+            {item.name}
+          </Link>
         ))}
       </nav>
 
