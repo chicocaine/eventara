@@ -165,8 +165,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
-                    // TODO: Navigate to settings page
-                    console.log('Navigate to settings');
+                    navigate('/profile?tab=settings');
                   }}
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                 >

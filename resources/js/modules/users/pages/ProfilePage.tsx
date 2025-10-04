@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MainLayout } from '../../../shared/layouts/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 import type { UserProfile, FileUploadResponse } from '../types/auth.js';
@@ -14,6 +15,7 @@ interface ProfilePageProps {}
 
 export default function ProfilePage({}: ProfilePageProps) {
   const { user, isLoading: authLoading } = useAuth();
+  const location = useLocation();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,16 @@ export default function ProfilePage({}: ProfilePageProps) {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  // Handle URL parameters to set active tab
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    
+    if (tabParam && ['details', 'posts', 'certifika', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam as 'details' | 'posts' | 'certifika' | 'settings');
+    }
+  }, [location.search]);
 
   useEffect(() => {
     // Load Certifika profile when the certifika tab is active
