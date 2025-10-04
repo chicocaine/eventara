@@ -3,7 +3,11 @@ import { MainLayout } from '../../../shared/layouts/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 import type { UserProfile, FileUploadResponse } from '../types/auth.js';
 import { profileService } from '../services/profileService.js';
-import { AVAILABLE_PLATFORMS, getPlatformById, validatePlatformUrl } from '../../../shared/config/platforms.js';
+import { certifikaService } from '../services/certifikaService.js';
+import type { CertifikaProfile, CertifikaResponse } from '../services/certifikaService.js';
+import ProfileDetailsTab from '../components/ProfileDetailsTab.js';
+import VenuePostsTab from '../components/VenuePostsTab.js';
+import CertifikaTab from '../components/CertifikaTab.js';
 
 interface ProfilePageProps {}
 
@@ -12,7 +16,7 @@ export default function ProfilePage({}: ProfilePageProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'posts'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'posts' | 'certifika'>('details');
   
   // Form state
   const [isEditing, setIsEditing] = useState(false);
@@ -32,9 +36,26 @@ export default function ProfilePage({}: ProfilePageProps) {
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
+  // Certifika states
+  const [certifikaProfile, setCertifikaProfile] = useState<CertifikaProfile | null>(null);
+  const [certifikaLoading, setCertifikaLoading] = useState(false);
+  const [certifikaError, setCertifikaError] = useState<string | null>(null);
+  const [certifikaTab, setCertifikaTab] = useState<'gallery' | 'scanner'>('gallery');
+  const [showCertifikaSuccess, setShowCertifikaSuccess] = useState(false);
+  const [certifikaConnected, setCertifikaConnected] = useState(false);
+  const [certifikaNfts, setCertifikaNfts] = useState([]);
+  const [showQrScanner, setShowQrScanner] = useState(false);
+
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    // Load Certifika profile when the certifika tab is active
+    if (activeTab === 'certifika') {
+      loadCertifikaProfile();
+    }
+  }, [activeTab]);
 
   const loadProfile = async () => {
     try {
@@ -63,6 +84,49 @@ export default function ProfilePage({}: ProfilePageProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const loadCertifikaProfile = async () => {
+    try {
+      setCertifikaLoading(true);
+      setCertifikaError(null);
+      
+      const response: CertifikaResponse<CertifikaProfile> = await certifikaService.getUserProfile();
+      
+      if (response.success && response.data) {
+        setCertifikaProfile(response.data);
+        
+        // If user doesn't have a wallet linked, show scanner tab by default
+        if (!response.data.has_certifika_wallet) {
+          setCertifikaTab('scanner');
+        }
+      } else {
+        setCertifikaError(response.message || 'Failed to load Certifika profile');
+      }
+    } catch (error) {
+      console.error('Error loading Certifika profile:', error);
+      setCertifikaError('Failed to load Certifika profile');
+    } finally {
+      setCertifikaLoading(false);
+    }
+  };
+
+  const handleCertifikaQrSuccess = async (result: any) => {
+    setShowCertifikaSuccess(true);
+    
+    // Reload profile to get updated wallet info
+    await loadCertifikaProfile();
+    
+    // Switch to gallery tab to show NFTs
+    setCertifikaTab('gallery');
+    
+    // Hide success message after 5 seconds
+    setTimeout(() => setShowCertifikaSuccess(false), 5000);
+  };
+
+  const handleCertifikaQrError = (errorMessage: string) => {
+    setCertifikaError(errorMessage);
+    setTimeout(() => setCertifikaError(null), 5000);
   };
 
   // Link management functions
@@ -467,416 +531,55 @@ export default function ProfilePage({}: ProfilePageProps) {
                   >
                     Venue Posts
                   </button>
+                  <button
+                    onClick={() => setActiveTab('certifika')}
+                    className={`py-4 px-6 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                      activeTab === 'certifika'
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Certifika
+                  </button>
                 </nav>
               </div>
 
               {/* Tab Content */}
               <div className="p-6">
                 {activeTab === 'details' && (
-                  <div className="space-y-6">
-                    {/* Edit Toggle */}
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
-                      <button
-                        onClick={() => isEditing ? handleCancelEdit() : setIsEditing(true)}
-                        className="text-indigo-600 hover:text-indigo-500 font-medium transition-colors duration-200"
-                      >
-                        {isEditing ? 'Cancel' : 'Edit Profile'}
-                      </button>
-                    </div>
-
-                    {/* Form Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Alias */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Alias
-                        </label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={formData.alias}
-                            onChange={(e) => handleInputChange('alias', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter your alias"
-                          />
-                        ) : (
-                          <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
-                            {profile?.alias || 'Not set'}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Email (read-only) */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email
-                        </label>
-                        <p className="px-3 py-2 text-gray-500 bg-gray-50 rounded-md">
-                          {user?.email}
-                        </p>
-                      </div>
-
-                      {/* First Name */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          First Name
-                        </label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={formData.first_name}
-                            onChange={(e) => handleInputChange('first_name', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter your first name"
-                          />
-                        ) : (
-                          <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
-                            {profile?.first_name || 'Not set'}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Last Name */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Last Name
-                        </label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={formData.last_name}
-                            onChange={(e) => handleInputChange('last_name', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter your last name"
-                          />
-                        ) : (
-                          <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
-                            {profile?.last_name || 'Not set'}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Contact Phone */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Contact Phone
-                        </label>
-                        {isEditing ? (
-                          <input
-                            type="tel"
-                            value={formData.contact_phone}
-                            onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter your phone number"
-                          />
-                        ) : (
-                          <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
-                            {profile?.contact_phone || 'Not set'}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Mailing Address */}
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mailing Address
-                        </label>
-                        {isEditing ? (
-                          <textarea
-                            value={formData.mailing_address}
-                            onChange={(e) => handleInputChange('mailing_address', e.target.value)}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Enter your mailing address"
-                          />
-                        ) : (
-                          <div className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md min-h-[80px]">
-                            {profile?.mailing_address || 'Not set'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Links Section */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Social Links
-                        </label>
-                        {isEditing && (
-                          <button
-                            type="button"
-                            onClick={addLink}
-                            className="text-sm text-indigo-600 hover:text-indigo-500"
-                          >
-                            + Add Link
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {formData.links.length === 0 ? (
-                          <div className="px-3 py-2 text-gray-500 bg-gray-50 rounded-md text-center">
-                            No links added yet
-                            {isEditing && (
-                              <button
-                                type="button"
-                                onClick={addLink}
-                                className="ml-2 text-indigo-600 hover:text-indigo-500"
-                              >
-                                Add your first link
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          formData.links.map((link, index) => {
-                            const platform = getPlatformById(link.platform);
-                            return (
-                              <div key={index} className="border border-gray-200 rounded-md p-3">
-                                {isEditing ? (
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <select
-                                        value={link.platform}
-                                        onChange={(e) => updateLink(index, 'platform', e.target.value)}
-                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                      >
-                                        <option value="">Select platform</option>
-                                        {AVAILABLE_PLATFORMS.map((platform) => (
-                                          <option key={platform.id} value={platform.id}>
-                                            {platform.name}
-                                          </option>
-                                        ))}
-                                      </select>
-                                      <button
-                                        type="button"
-                                        onClick={() => removeLink(index)}
-                                        className="px-2 py-2 text-red-600 hover:text-red-500"
-                                        title="Remove link"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                    <input
-                                      type="url"
-                                      value={link.url}
-                                      onChange={(e) => updateLink(index, 'url', e.target.value)}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                      placeholder={platform ? platform.placeholder : "Enter URL"}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-3">
-                                    {platform && (
-                                      <div 
-                                        className="w-5 h-5 flex-shrink-0"
-                                        dangerouslySetInnerHTML={{ __html: platform.icon }}
-                                      />
-                                    )}
-                                    <div className="flex-1">
-                                      <div className="text-xs font-medium text-gray-600 mb-1">
-                                        {platform ? platform.name : 'Unknown Platform'}
-                                      </div>
-                                      <a 
-                                        href={link.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="text-indigo-600 hover:text-indigo-500 break-all"
-                                      >
-                                        {link.url}
-                                      </a>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Bio */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bio
-                      </label>
-                      {isEditing ? (
-                        <textarea
-                          value={formData.bio}
-                          onChange={(e) => handleInputChange('bio', e.target.value)}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="Tell us about yourself..."
-                        />
-                      ) : (
-                        <div className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md min-h-[100px]">
-                          {profile?.bio || 'add bio'}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Save Button */}
-                    {hasChanges && isEditing && (
-                      <div className="flex justify-end pt-4 border-t border-gray-200">
-                        <button
-                          onClick={handleSaveChanges}
-                          disabled={isSaving}
-                          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200 flex items-center"
-                        >
-                          {isSaving ? (
-                            <>
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Saving...
-                            </>
-                          ) : (
-                            'Save Changes'
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <ProfileDetailsTab
+                    profile={profile}
+                    userEmail={user?.email}
+                    isEditing={isEditing}
+                    setIsEditing={setIsEditing}
+                    hasChanges={hasChanges}
+                    isSaving={isSaving}
+                    formData={formData}
+                    onInputChange={handleInputChange}
+                    onSaveChanges={handleSaveChanges}
+                    onCancelEdit={handleCancelEdit}
+                    onAddLink={addLink}
+                    onRemoveLink={removeLink}
+                    onUpdateLink={updateLink}
+                  />
                 )}
 
                 {activeTab === 'posts' && (
-                  <div className="space-y-6">
-                    {/* Posts Header */}
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium text-gray-900">Venue Hub Posts</h3>
-                      <div className="text-sm text-gray-500">
-                        12 posts
-                      </div>
-                    </div>
+                  <VenuePostsTab />
+                )}
 
-                    {/* Posts Grid */}
-                    <div className="grid gap-6">
-                      {/* Sample Post 1 */}
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
-                        <div className="aspect-video bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            <p className="text-sm">Venue Image</p>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="text-lg font-semibold text-gray-900">Grand Ballroom - Downtown</h4>
-                            <span className="text-xs text-gray-500">2 days ago</span>
-                          </div>
-                          <p className="text-gray-600 text-sm mb-3">
-                            Beautiful ballroom venue perfect for weddings and corporate events. Features elegant chandeliers, hardwood floors, and capacity for 200 guests.
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                                24 likes
-                              </span>
-                              <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
-                                8 comments
-                              </span>
-                            </div>
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sample Post 2 */}
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
-                        <div className="aspect-video bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="text-sm">Garden Venue</p>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="text-lg font-semibold text-gray-900">Sunset Garden Pavilion</h4>
-                            <span className="text-xs text-gray-500">1 week ago</span>
-                          </div>
-                          <p className="text-gray-600 text-sm mb-3">
-                            Outdoor garden venue with stunning sunset views. Perfect for intimate ceremonies and receptions. Features covered pavilion and landscaped gardens.
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                                18 likes
-                              </span>
-                              <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
-                                5 comments
-                              </span>
-                            </div>
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Active</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sample Post 3 */}
-                      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200">
-                        <div className="aspect-video bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                            </svg>
-                            <p className="text-sm">Event Hall</p>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="text-lg font-semibold text-gray-900">Modern Event Hall</h4>
-                            <span className="text-xs text-gray-500">2 weeks ago</span>
-                          </div>
-                          <p className="text-gray-600 text-sm mb-3">
-                            Contemporary event space with state-of-the-art audio/visual equipment. Ideal for conferences, product launches, and corporate events.
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                                31 likes
-                              </span>
-                              <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
-                                12 comments
-                              </span>
-                            </div>
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Pending</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Empty State for More Posts */}
-                      <div className="text-center py-8 text-gray-500">
-                        <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <p className="text-sm">No more posts to show</p>
-                        <p className="text-xs mt-1">Share your venue to see it here!</p>
-                      </div>
-                    </div>
-                  </div>
+                {/* Certifika Tab Content */}
+                {activeTab === 'certifika' && (
+                  <CertifikaTab
+                    certifikaProfile={certifikaProfile}
+                    certifikaLoading={certifikaLoading}
+                    certifikaError={certifikaError}
+                    certifikaConnected={certifikaConnected}
+                    showQrScanner={showQrScanner}
+                    setShowQrScanner={setShowQrScanner}
+                    onQrSuccess={handleCertifikaQrSuccess}
+                    onQrError={handleCertifikaQrError}
+                  />
                 )}
               </div>
             </div>
