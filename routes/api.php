@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\ProfileSetupController;
 use App\Http\Controllers\Auth\ReactivationController;
 use App\Http\Controllers\Auth\GoogleAuth;
 use App\Http\Controllers\CertifikaController;
+use App\Http\Controllers\User\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication routes
@@ -40,4 +41,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/certifika/nfts', [CertifikaController::class, 'getUserNfts'])->name('api.certifika.nfts');
     Route::post('/certifika/sync-nfts', [CertifikaController::class, 'syncNfts'])->name('api.certifika.sync-nfts');
     Route::get('/certifika/profile', [CertifikaController::class, 'getUserProfile'])->name('api.certifika.profile');
+});
+
+// User Profile routes (require authentication)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'getProfile'])->name('api.profile.get');
+    Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('api.profile.update');
+    Route::post('/profile/upload-image', [ProfileController::class, 'uploadImage'])->name('api.profile.upload-image');
 });

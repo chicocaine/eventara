@@ -37,7 +37,10 @@ return new class extends Migration
             $table->string('last_name')->nullable();
             $table->string('image_url')->nullable();
             $table->string('banner_url')->nullable();
+            $table->string('contact_phone')->nullable();
             $table->text('bio')->nullable();
+            $table->text('mailing_address')->nullable();
+            $table->jsonb('links')->nullable();
             $table->jsonb('preferences')->nullable();
 
             $table->string('certifika_wallet')->nullable();

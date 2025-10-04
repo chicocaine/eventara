@@ -23,7 +23,10 @@ class UserProfile extends Model
         'last_name',
         'image_url',
         'banner_url',
+        'contact_phone',
         'bio',
+        'mailing_address',
+        'links',
         'preferences',
         'certifika_wallet',
     ];
@@ -32,6 +35,7 @@ class UserProfile extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
+        'links' => 'array',
         'preferences' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../modules/users/hooks/useAuth.js';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isDashboardMenuOpen, setIsDashboardMenuOpen] = useState(false);
 
@@ -248,8 +249,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
-                    // TODO: Navigate to profile page
-                    console.log('Navigate to profile');
+                    navigate('/profile');
                   }}
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
                 >

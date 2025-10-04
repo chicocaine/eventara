@@ -67,7 +67,13 @@ export interface UserProfile {
   last_name?: string;
   image_url?: string;
   banner_url?: string;
+  contact_phone?: string;
   bio?: string;
+  mailing_address?: string;
+  links?: Array<{
+    platform: string;
+    url: string;
+  }>;
   preferences?: UserPreferences;
   certifika_wallet?: string;
   full_name?: string;

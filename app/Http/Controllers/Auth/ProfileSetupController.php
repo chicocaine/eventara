@@ -71,7 +71,10 @@ class ProfileSetupController extends Controller
                 'last_name' => $request->input('last_name'),
                 'image_url' => $request->input('image_url') ?: $this->getDefaultImageUrl(),
                 'banner_url' => $request->input('banner_url') ?: $this->getDefaultBannerUrl(),
+                'contact_phone' => $request->input('contact_phone'),
                 'bio' => $request->input('bio'),
+                'mailing_address' => $request->input('mailing_address'),
+                'links' => $request->input('links'),
                 'preferences' => $request->input('preferences') ?: $this->getDefaultPreferences(),
             ];
 
@@ -100,7 +103,10 @@ class ProfileSetupController extends Controller
                     'last_name' => $profile->last_name,
                     'image_url' => $profile->image_url,
                     'banner_url' => $profile->banner_url,
+                    'contact_phone' => $profile->contact_phone,
                     'bio' => $profile->bio,
+                    'mailing_address' => $profile->mailing_address,
+                    'links' => $profile->links,
                     'preferences' => $profile->preferences,
                     'full_name' => $profile->full_name,
                     'display_name' => $profile->display_name,
@@ -238,7 +244,10 @@ class ProfileSetupController extends Controller
                 'last_name' => null,
                 'image_url' => $this->getDefaultImageUrl(),
                 'banner_url' => $this->getDefaultBannerUrl(),
+                'contact_phone' => null,
                 'bio' => null,
+                'mailing_address' => null,
+                'links' => null,
                 'preferences' => $this->getDefaultPreferences(),
             ];
 
@@ -267,7 +276,10 @@ class ProfileSetupController extends Controller
                     'last_name' => $profile->last_name,
                     'image_url' => $profile->image_url,
                     'banner_url' => $profile->banner_url,
+                    'contact_phone' => $profile->contact_phone,
                     'bio' => $profile->bio,
+                    'mailing_address' => $profile->mailing_address,
+                    'links' => $profile->links,
                     'preferences' => $profile->preferences,
                     'full_name' => $profile->full_name,
                     'display_name' => $profile->display_name,
