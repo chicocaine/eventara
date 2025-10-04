@@ -1,3 +1,4 @@
+// TEMPORARY PAGE
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../../../shared/layouts/index.js';
 import { certifikaService } from '../services/certifikaService.js';

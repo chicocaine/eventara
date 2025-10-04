@@ -40,10 +40,7 @@ export default function ProfilePage({}: ProfilePageProps) {
   const [certifikaProfile, setCertifikaProfile] = useState<CertifikaProfile | null>(null);
   const [certifikaLoading, setCertifikaLoading] = useState(false);
   const [certifikaError, setCertifikaError] = useState<string | null>(null);
-  const [certifikaTab, setCertifikaTab] = useState<'gallery' | 'scanner'>('gallery');
-  const [showCertifikaSuccess, setShowCertifikaSuccess] = useState(false);
   const [certifikaConnected, setCertifikaConnected] = useState(false);
-  const [certifikaNfts, setCertifikaNfts] = useState([]);
   const [showQrScanner, setShowQrScanner] = useState(false);
 
   useEffect(() => {
@@ -95,11 +92,7 @@ export default function ProfilePage({}: ProfilePageProps) {
       
       if (response.success && response.data) {
         setCertifikaProfile(response.data);
-        
-        // If user doesn't have a wallet linked, show scanner tab by default
-        if (!response.data.has_certifika_wallet) {
-          setCertifikaTab('scanner');
-        }
+        setCertifikaConnected(response.data.has_certifika_wallet);
       } else {
         setCertifikaError(response.message || 'Failed to load Certifika profile');
       }
@@ -112,16 +105,8 @@ export default function ProfilePage({}: ProfilePageProps) {
   };
 
   const handleCertifikaQrSuccess = async (result: any) => {
-    setShowCertifikaSuccess(true);
-    
     // Reload profile to get updated wallet info
     await loadCertifikaProfile();
-    
-    // Switch to gallery tab to show NFTs
-    setCertifikaTab('gallery');
-    
-    // Hide success message after 5 seconds
-    setTimeout(() => setShowCertifikaSuccess(false), 5000);
   };
 
   const handleCertifikaQrError = (errorMessage: string) => {
