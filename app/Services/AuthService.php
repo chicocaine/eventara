@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 
 class AuthService
 {
@@ -110,6 +112,8 @@ class AuthService
                 'suspended' => false,
                 'role_id' => $this->getDefaultRoleId(),
                 'email_verified_at' => null, // Will be set after email verification
+                'auth_provider' => 'email',
+                'password_set_by_user' => true,
             ]);
 
             Log::info('New user registered', [
@@ -132,8 +136,8 @@ class AuthService
         }
     }
 
-    /**
-     * Log out the current user.
+        /**
+     * Log out the authenticated user.
      *
      * @return void
      */
@@ -146,13 +150,23 @@ class AuthService
                 'user_id' => $user->user_id,
                 'email' => $user->email,
             ]);
+            
+            // For Sanctum, revoke the current access token (only if it's a real token, not transient)
+            if (request()->user() && request()->user()->currentAccessToken()) {
+                $token = request()->user()->currentAccessToken();
+                
+                // Check if it's not a TransientToken (which is used for session auth)
+                if (!$token instanceof \Laravel\Sanctum\TransientToken) {
+                    $token->delete();
+                }
+            }
         }
-
-        Auth::logout();
         
-        // Invalidate the session
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        // For session-based auth, invalidate the session
+        if (request()->hasSession()) {
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
     }
 
     /**
@@ -220,6 +234,38 @@ class AuthService
         Log::info('Password changed', [
             'user_id' => $user->user_id,
             'email' => $user->email,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Set initial password for OAuth users.
+     *
+     * @param UserAuth $user
+     * @param string $newPassword
+     * @return bool
+     * @throws ValidationException
+     */
+    public function setInitialPassword(UserAuth $user, string $newPassword): bool
+    {
+        // Verify this is an OAuth user who hasn't set their password
+        if (!$user->needsToSetPassword()) {
+            throw ValidationException::withMessages([
+                'password' => ['You have already set your password. Use the change password feature instead.']
+            ]);
+        }
+
+        // Update password and mark as set by user
+        $user->update([
+            'password' => Hash::make($newPassword),
+            'password_set_by_user' => true,
+        ]);
+
+        Log::info('Initial password set for OAuth user', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'auth_provider' => $user->auth_provider,
         ]);
 
         return true;

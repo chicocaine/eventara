@@ -2,6 +2,7 @@
 export { default as LoginPage } from './pages/auth/LoginPage.js';
 export { default as RegisterPage } from './pages/auth/RegisterPage.js';
 export { default as DashboardPage } from './pages/DashboardPage.js';
+export { default as ProfilePage } from './pages/ProfilePage.js';
 export { default as ReactivationPage } from './pages/auth/ReactivationPage.js';
 
 // Auth Components

@@ -2,9 +2,13 @@ export interface User {
   id: number;
   email: string;
   display_name: string;
+  name?: string; // For Google OAuth
+  avatar?: string; // For Google OAuth profile picture
   role?: string;
   active?: boolean;
   is_volunteer?: boolean;
+  auth_provider?: string; // 'google', 'email', etc.
+  password_set_by_user?: boolean; // Whether user has set their own password
 }
 
 export interface LoginCredentials {
@@ -17,6 +21,27 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   password_confirmation: string;
+}
+
+export interface RegisterWithPrivacyCredentials extends RegisterCredentials {
+  privacy_settings?: {
+    dark_mode?: boolean;
+    notifications?: {
+      email_notifications?: boolean;
+      push_notifications?: boolean;
+      event_reminders?: boolean;
+      venue_updates?: boolean;
+      security_alerts?: boolean;
+    };
+    privacy?: {
+      profile_visibility?: 'public' | 'private' | 'friends';
+      show_online_status?: boolean;
+      allow_friend_requests?: boolean;
+      show_activity_status?: boolean;
+      data_collection_consent?: boolean;
+      marketing_emails_consent?: boolean;
+    };
+  };
 }
 
 export interface ForgotPasswordRequest {
@@ -45,9 +70,15 @@ export interface ProfileSetupRequest {
   alias: string;
   first_name?: string;
   last_name?: string;
+  contact_phone?: string;
+  mailing_address?: string;
   image_url?: string;
   banner_url?: string;
   bio?: string;
+  links?: Array<{
+    platform: string;
+    url: string;
+  }>;
   preferences?: UserPreferences;
 }
 
@@ -67,7 +98,13 @@ export interface UserProfile {
   last_name?: string;
   image_url?: string;
   banner_url?: string;
+  contact_phone?: string;
   bio?: string;
+  mailing_address?: string;
+  links?: Array<{
+    platform: string;
+    url: string;
+  }>;
   preferences?: UserPreferences;
   certifika_wallet?: string;
   full_name?: string;

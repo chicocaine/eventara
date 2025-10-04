@@ -13,6 +13,7 @@ import EventsPage from './modules/events/pages/EventsPage.js';
 import VenuesPage from './modules/venues/pages/VenuesPage.js';
 import VolunteersPage from './modules/volunteers/pages/VolunteersPage.js';
 import CertifikaPage from './modules/users/pages/CertifikaPage.js';
+import ProfilePage from './modules/users/pages/ProfilePage.js';
 import ForgotPasswordForm from './modules/users/components/auth/ForgotPasswordForm.js';
 import ResetPasswordForm from './modules/users/components/auth/ResetPasswordForm.js';
 import ProfileSetupForm from './modules/users/components/profile/ProfileSetupForm.js';
@@ -77,6 +78,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <CertifikaPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/profile" 
+                        element={
+                            <ProtectedRoute>
+                                <ProfilePage />
                             </ProtectedRoute>
                         } 
                     />

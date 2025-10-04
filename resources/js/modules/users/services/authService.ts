@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
-import type { LoginCredentials, RegisterCredentials, AuthResponse, User, PasswordResetResponse, ProfileSetupRequest, ProfileSetupResponse } from '../types/auth.js';
+import type { LoginCredentials, RegisterCredentials, RegisterWithPrivacyCredentials, AuthResponse, User, PasswordResetResponse, ProfileSetupRequest, ProfileSetupResponse } from '../types/auth.js';
+import { settingsService, getDefaultUserSettings, type UserSettings } from './settingsService.js';
 
 // Set up axios defaults
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -95,6 +96,99 @@ class AuthService {
         success: false,
         message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
         errors: { general: ['Unable to connect to server'] }
+      };
+    }
+  }
+
+  /**
+   * Register new user with privacy preferences
+   */
+  async registerWithPrivacy(credentials: RegisterWithPrivacyCredentials): Promise<AuthResponse> {
+    try {
+      console.log('Attempting register with privacy settings to:', `/api/auth/register`);
+      
+      // First register the user
+      const registerResponse = await this.register({
+        email: credentials.email,
+        password: credentials.password,
+        password_confirmation: credentials.password_confirmation,
+      });
+
+      // If registration is successful, initialize privacy settings
+      if (registerResponse.success && registerResponse.user) {
+        try {
+          const defaultSettings = getDefaultUserSettings();
+          const userSettings: UserSettings = credentials.privacy_settings 
+            ? {
+                dark_mode: credentials.privacy_settings.dark_mode ?? defaultSettings.dark_mode,
+                notifications: {
+                  ...defaultSettings.notifications,
+                  ...credentials.privacy_settings.notifications,
+                },
+                privacy: {
+                  ...defaultSettings.privacy,
+                  ...credentials.privacy_settings.privacy,
+                },
+              }
+            : defaultSettings;
+            
+          const settingsResponse = await settingsService.initializeUserSettings(userSettings);
+          
+          if (!settingsResponse.success) {
+            console.warn('Failed to initialize privacy settings, but registration successful');
+          }
+        } catch (settingsError) {
+          console.warn('Failed to initialize privacy settings:', settingsError);
+          // Don't fail the entire registration if settings fail
+        }
+      }
+
+      return registerResponse;
+    } catch (error: any) {
+      console.error('Register with privacy error:', error);
+      
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      
+      return {
+        success: false,
+        message: `Network error occurred (${error.response?.status || 'Unknown'}). Please try again.`,
+        errors: { general: ['Unable to connect to server'] }
+      };
+    }
+  }
+
+  /**
+   * Handle Google OAuth registration with default privacy settings
+   */
+  async handleGoogleOAuthRegistration(googleUser: any): Promise<AuthResponse> {
+    try {
+      console.log('Handling Google OAuth registration');
+      
+      // This would be called after Google OAuth success
+      // Initialize with privacy-focused defaults for OAuth users
+      const defaultSettings = getDefaultUserSettings();
+      
+      try {
+        await settingsService.initializeUserSettings(defaultSettings);
+      } catch (settingsError) {
+        console.warn('Failed to initialize privacy settings for Google OAuth user:', settingsError);
+      }
+
+      // Return a success response - the actual OAuth flow would be handled differently
+      return {
+        success: true,
+        user: googleUser,
+        message: 'Google OAuth registration successful'
+      };
+    } catch (error: any) {
+      console.error('Google OAuth registration error:', error);
+      
+      return {
+        success: false,
+        message: 'Failed to complete Google OAuth registration',
+        errors: { general: ['OAuth registration failed'] }
       };
     }
   }
