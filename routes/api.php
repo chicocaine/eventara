@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\ReactivationController;
 use App\Http\Controllers\Auth\GoogleAuth;
 use App\Http\Controllers\CertifikaController;
 use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication routes
@@ -14,6 +15,7 @@ Route::post('/auth/login', [AuthController::class, 'login'])->name('api.login');
 Route::post('/auth/register', [AuthController::class, 'register'])->name('api.register');
 Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.logout');
 Route::post('/auth/change-password', [AuthController::class, 'changePassword'])->name('api.password.change');
+Route::post('/auth/set-initial-password', [AuthController::class, 'setInitialPassword'])->name('api.password.set-initial');
 Route::get('/auth/check', [AuthController::class, 'checkAuth'])->name('api.auth.check');
 
 // Account Reactivation routes
@@ -48,4 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'getProfile'])->name('api.profile.get');
     Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('api.profile.update');
     Route::post('/profile/upload-image', [ProfileController::class, 'uploadImage'])->name('api.profile.upload-image');
+});
+
+// User Settings & Account Management routes (require authentication)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user/settings', [UserController::class, 'getSettings'])->name('api.user.settings.get');
+    Route::put('/user/settings', [UserController::class, 'updateSettings'])->name('api.user.settings.update');
+    Route::post('/user/deactivate', [UserController::class, 'deactivateAccount'])->name('api.user.deactivate');
+    Route::delete('/user/delete', [UserController::class, 'deleteAccount'])->name('api.user.delete');
 });

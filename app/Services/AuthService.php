@@ -110,6 +110,8 @@ class AuthService
                 'suspended' => false,
                 'role_id' => $this->getDefaultRoleId(),
                 'email_verified_at' => null, // Will be set after email verification
+                'auth_provider' => 'email',
+                'password_set_by_user' => true,
             ]);
 
             Log::info('New user registered', [
@@ -220,6 +222,38 @@ class AuthService
         Log::info('Password changed', [
             'user_id' => $user->user_id,
             'email' => $user->email,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Set initial password for OAuth users.
+     *
+     * @param UserAuth $user
+     * @param string $newPassword
+     * @return bool
+     * @throws ValidationException
+     */
+    public function setInitialPassword(UserAuth $user, string $newPassword): bool
+    {
+        // Verify this is an OAuth user who hasn't set their password
+        if (!$user->needsToSetPassword()) {
+            throw ValidationException::withMessages([
+                'password' => ['You have already set your password. Use the change password feature instead.']
+            ]);
+        }
+
+        // Update password and mark as set by user
+        $user->update([
+            'password' => Hash::make($newPassword),
+            'password_set_by_user' => true,
+        ]);
+
+        Log::info('Initial password set for OAuth user', [
+            'user_id' => $user->user_id,
+            'email' => $user->email,
+            'auth_provider' => $user->auth_provider,
         ]);
 
         return true;

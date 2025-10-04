@@ -5,6 +5,7 @@ namespace App\Http\Requests\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use App\Models\UserAuth;
 
 class ChangePasswordRequest extends FormRequest
 {
@@ -13,7 +14,11 @@ class ChangePasswordRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Auth::check(); // Only authenticated users can change password
+        /** @var UserAuth|null $user */
+        $user = Auth::user();
+        
+        // Only authenticated users who have set their own password can change it
+        return $user && $user->canChangePassword();
     }
 
     /**
@@ -33,10 +38,10 @@ class ChangePasswordRequest extends FormRequest
                 'confirmed',
                 'different:current_password', // New password must be different from current
                 Password::min(8)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols()
-                    ->uncompromised(),
+                    // ->mixedCase() -- will include in production
+                    // ->numbers()
+                    // ->symbols()
+                    // ->uncompromised(),
             ],
         ];
     }

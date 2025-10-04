@@ -147,6 +147,8 @@ class GoogleAuth extends Controller
                         'active' => true,
                         'suspended' => false,
                         'role_id' => $defaultRoleId,
+                        'auth_provider' => 'google',
+                        'password_set_by_user' => false,
                     ]);
 
                     // Create user profile with default preferences including email notifications

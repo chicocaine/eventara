@@ -274,6 +274,81 @@ class SettingsService {
       };
     }
   }
+
+  async changePassword(oldPassword: string, newPassword: string, confirmPassword: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          current_password: oldPassword,
+          password: newPassword,
+          password_confirmation: confirmPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: data.message || 'Failed to change password'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+    } catch (error) {
+      console.error('Password change error:', error);
+      return {
+        success: false,
+        message: 'Network error occurred'
+      };
+    }
+  }
+
+  async setInitialPassword(password: string, confirmPassword: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch('/api/auth/set-initial-password', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          password: password,
+          password_confirmation: confirmPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: data.message || 'Failed to set password'
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Password set successfully! You can now log in using your email and password.'
+      };
+    } catch (error) {
+      console.error('Set initial password error:', error);
+      return {
+        success: false,
+        message: 'Network error occurred'
+      };
+    }
+  }
 }
 
 export const settingsService = new SettingsService();

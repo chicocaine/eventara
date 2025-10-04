@@ -7,6 +7,8 @@ export interface User {
   role?: string;
   active?: boolean;
   is_volunteer?: boolean;
+  auth_provider?: string; // 'google', 'email', etc.
+  password_set_by_user?: boolean; // Whether user has set their own password
 }
 
 export interface LoginCredentials {

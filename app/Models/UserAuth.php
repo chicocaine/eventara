@@ -28,6 +28,8 @@ class UserAuth extends Authenticatable
         'role_id',
         'email_verified_at',
         'last_login',
+        'auth_provider',
+        'password_set_by_user',
     ];
 
     /**
@@ -48,7 +50,8 @@ class UserAuth extends Authenticatable
         'updated_at' => 'datetime',
         'password' => 'hashed',
         'active' => 'boolean',
-        'suspended' => 'boolean'
+        'suspended' => 'boolean',
+        'password_set_by_user' => 'boolean',
     ];
 
     /**
@@ -261,5 +264,61 @@ class UserAuth extends Authenticatable
                          ->where('created_at', '<', $threeMonthsAgo);
                 });
             });
+    }
+
+    /**
+     * Check if user is an OAuth user (registered via social provider).
+     */
+    public function isOAuthUser(): bool
+    {
+        return !empty($this->auth_provider);
+    }
+
+    /**
+     * Check if user has set their own password (vs auto-generated).
+     */
+    public function hasSetOwnPassword(): bool
+    {
+        return (bool) $this->password_set_by_user;
+    }
+
+    /**
+     * Check if user can change their password (has set own password before).
+     */
+    public function canChangePassword(): bool
+    {
+        return $this->hasSetOwnPassword();
+    }
+
+    /**
+     * Check if user needs to set an initial password.
+     */
+    public function needsToSetPassword(): bool
+    {
+        return $this->isOAuthUser() && !$this->hasSetOwnPassword();
+    }
+
+    /**
+     * Mark that user has set their own password.
+     */
+    public function markPasswordAsSet(): void
+    {
+        $this->update(['password_set_by_user' => true]);
+    }
+
+    /**
+     * Get the authentication provider name.
+     */
+    public function getAuthProvider(): ?string
+    {
+        return $this->auth_provider;
+    }
+
+    /**
+     * Check if user registered via Google OAuth.
+     */
+    public function isGoogleUser(): bool
+    {
+        return $this->auth_provider === 'google';
     }
 }

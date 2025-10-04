@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\SetInitialPasswordRequest;
 use App\Services\AuthService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
@@ -49,6 +50,8 @@ class AuthController extends Controller
                         'active' => $user->active,
                         'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
+                        'auth_provider' => $user->auth_provider,
+                        'password_set_by_user' => $user->password_set_by_user,
                     ],
                     'redirect_url' => $this->getIntendedUrl()
                 ]);
@@ -168,6 +171,8 @@ class AuthController extends Controller
                 'active' => $user->active,
                 'suspended' => $user->suspended,
                 'is_volunteer' => $user->isVolunteer(),
+                'auth_provider' => $user->auth_provider,
+                'password_set_by_user' => $user->password_set_by_user,
             ],
         ]);
     }
@@ -197,6 +202,43 @@ class AuthController extends Controller
             }
 
             return back()->with('success', 'Password changed successfully.');
+
+        } catch (ValidationException $e) {
+            return $this->handleValidationErrors($request, $e->errors());
+        }
+    }
+
+    /**
+     * Set initial password for OAuth users.
+     *
+     * @param SetInitialPasswordRequest $request
+     * @return JsonResponse|RedirectResponse
+     */
+    public function setInitialPassword(SetInitialPasswordRequest $request): JsonResponse|RedirectResponse
+    {
+        try {
+            $user = $this->authService->getAuthenticatedUser();
+            
+            // Double-check that user needs to set password
+            if (!$user->needsToSetPassword()) {
+                throw ValidationException::withMessages([
+                    'password' => ['You have already set your password. Use the change password feature instead.']
+                ]);
+            }
+            
+            $this->authService->setInitialPassword(
+                $user,
+                $request->input('password')
+            );
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Password set successfully. You can now log in using your email and password.',
+                ]);
+            }
+
+            return back()->with('success', 'Password set successfully. You can now log in using your email and password.');
 
         } catch (ValidationException $e) {
             return $this->handleValidationErrors($request, $e->errors());

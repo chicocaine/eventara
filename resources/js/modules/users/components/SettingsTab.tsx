@@ -18,6 +18,20 @@ export default function SettingsTab({}: SettingsTabProps) {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Password change states
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+
+  // Determine if user needs to set initial password (OAuth users who haven't set password)
+  const needsToSetPassword = user?.auth_provider && !user?.password_set_by_user;
+  const canChangePassword = user?.password_set_by_user;
+
   // Load user settings
   useEffect(() => {
     const loadSettings = async () => {
@@ -139,12 +153,171 @@ export default function SettingsTab({}: SettingsTabProps) {
     }
   };
 
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters long');
+    }
+    
+    if (!/(?=.*[a-z])/.test(password)) {
+      errors.push('Password must contain at least one lowercase letter');
+    }
+    
+    if (!/(?=.*[A-Z])/.test(password)) {
+      errors.push('Password must contain at least one uppercase letter');
+    }
+    
+    if (!/(?=.*\d)/.test(password)) {
+      errors.push('Password must contain at least one number');
+    }
+    
+    if (!/(?=.*[@$!%*?&])/.test(password)) {
+      errors.push('Password must contain at least one special character (@$!%*?&)');
+    }
+    
+    return errors;
+  };
+
+  const handlePasswordChange = (field: keyof typeof passwordData, value: string) => {
+    setPasswordData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear previous errors and messages
+    setPasswordErrors([]);
+    setPasswordMessage(null);
+    
+    // Validate new password if it's being changed
+    if (field === 'newPassword' && value) {
+      const errors = validatePassword(value);
+      setPasswordErrors(errors);
+    }
+    
+    // Check if passwords match when confirming
+    if (field === 'confirmPassword' && value && passwordData.newPassword && value !== passwordData.newPassword) {
+      setPasswordErrors(['Passwords do not match']);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate all fields are filled
+    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordErrors(['All fields are required']);
+      return;
+    }
+    
+    // Validate new password
+    const newPasswordErrors = validatePassword(passwordData.newPassword);
+    if (newPasswordErrors.length > 0) {
+      setPasswordErrors(newPasswordErrors);
+      return;
+    }
+    
+    // Check if passwords match
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordErrors(['New passwords do not match']);
+      return;
+    }
+    
+    // Check if new password is different from old password
+    if (passwordData.oldPassword === passwordData.newPassword) {
+      setPasswordErrors(['New password must be different from current password']);
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    setPasswordErrors([]);
+    
+    try {
+      const response = await settingsService.changePassword(
+        passwordData.oldPassword,
+        passwordData.newPassword,
+        passwordData.confirmPassword
+      );
+      
+      if (response.success) {
+        setPasswordMessage('Password changed successfully!');
+        setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => setPasswordMessage(null), 5000);
+      } else {
+        setPasswordErrors([response.message || 'Failed to change password']);
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      setPasswordErrors(['An unexpected error occurred. Please try again.']);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleSetInitialPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields for initial password setting
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordErrors(['Password and confirmation are required']);
+      return;
+    }
+    
+    // Validate new password
+    const newPasswordErrors = validatePassword(passwordData.newPassword);
+    if (newPasswordErrors.length > 0) {
+      setPasswordErrors(newPasswordErrors);
+      return;
+    }
+    
+    // Check if passwords match
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordErrors(['Passwords do not match']);
+      return;
+    }
+    
+    setIsChangingPassword(true);
+    setPasswordErrors([]);
+    
+    try {
+      const response = await settingsService.setInitialPassword(
+        passwordData.newPassword,
+        passwordData.confirmPassword
+      );
+      
+      if (response.success) {
+        setPasswordMessage(response.message || 'Password set successfully!');
+        setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        
+        // Update user state to reflect that password has been set
+        // This would need to be handled by the auth context/hook
+        // For now, we'll just show success message
+        setTimeout(() => {
+          setPasswordMessage(null);
+          // Optionally refresh page or update auth state
+          window.location.reload();
+        }, 3000);
+      } else {
+        setPasswordErrors([response.message || 'Failed to set password']);
+      }
+    } catch (error) {
+      console.error('Set initial password error:', error);
+      setPasswordErrors(['An unexpected error occurred. Please try again.']);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Save Message */}
       {saveMessage && (
         <div className={`p-4 rounded-md ${saveMessage.includes('successfully') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
           {saveMessage}
+        </div>
+      )}
+
+      {/* Password Change Message */}
+      {passwordMessage && (
+        <div className="p-4 rounded-md bg-green-50 text-green-700">
+          {passwordMessage}
         </div>
       )}
 
@@ -329,7 +502,122 @@ export default function SettingsTab({}: SettingsTabProps) {
         </div>
       </div>
 
-      {/* Save Settings Button */}
+      {/* Security Settings */}
+      <div>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Security</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              {needsToSetPassword ? 'Set Password' : 'Change Password'}
+            </label>
+            <p className="text-sm text-gray-500 mb-4">
+              {needsToSetPassword 
+                ? `Since you signed up with ${user?.auth_provider === 'google' ? 'Google' : 'OAuth'}, you can optionally set a password to enable email/password login.`
+                : 'Update your account password for better security'
+              }
+            </p>
+            
+            <form onSubmit={needsToSetPassword ? handleSetInitialPassword : handleChangePassword} className="space-y-4">
+              {/* Current Password Field - Only show for password change */}
+              {canChangePassword && (
+                <div>
+                  <label htmlFor="oldPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    id="oldPassword"
+                    value={passwordData.oldPassword}
+                    onChange={(e) => handlePasswordChange('oldPassword', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Enter your current password"
+                    required
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  {needsToSetPassword ? 'Password' : 'New Password'}
+                </label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder={needsToSetPassword ? "Enter your password" : "Enter your new password"}
+                  required
+                />
+                <div className="mt-2 text-xs text-gray-500">
+                  <p>Password requirements:</p>
+                  <ul className="list-disc list-inside ml-2 space-y-1">
+                    <li>At least 8 characters long</li>
+                    <li>One uppercase letter (A-Z)</li>
+                    <li>One lowercase letter (a-z)</li>
+                    <li>One number (0-9)</li>
+                    <li>One special character (@$!%*?&)</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Confirm your password"
+                  required
+                />
+              </div>
+
+              {/* Password Errors */}
+              {passwordErrors.length > 0 && (
+                <div className="p-3 rounded-md bg-red-50 border border-red-200">
+                  <div className="flex">
+                    <svg className="h-5 w-5 text-red-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-medium text-red-800">Please fix the following issues:</h4>
+                      <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+                        {passwordErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isChangingPassword || passwordErrors.length > 0}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-md transition-colors duration-200 flex items-center"
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {needsToSetPassword ? 'Setting Password...' : 'Changing Password...'}
+                    </>
+                  ) : (
+                    needsToSetPassword ? 'Set Password' : 'Change Password'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>      {/* Save Settings Button */}
       <div className="flex justify-end">
         <button
           onClick={handleSaveSettings}
