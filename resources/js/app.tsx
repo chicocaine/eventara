@@ -18,6 +18,15 @@ import ForgotPasswordForm from './modules/users/components/auth/ForgotPasswordFo
 import ResetPasswordForm from './modules/users/components/auth/ResetPasswordForm.js';
 import ProfileSetupForm from './modules/users/components/profile/ProfileSetupForm.js';
 
+// Admin pages
+import AdminPanelPage from './modules/admin/pages/AdminPanelPage.js';
+import EventBuilderPage from './modules/admin/pages/EventBuilderPage.js';
+import VenueManagementPage from './modules/admin/pages/VenueManagementPage.js';
+import VolunteerManagementPage from './modules/admin/pages/VolunteerManagementPage.js';
+import UserManagementPage from './modules/admin/pages/UserManagementPage.js';
+import AnalyticsPage from './modules/admin/pages/AnalyticsPage.js';
+import SystemLogsPage from './modules/admin/pages/SystemLogsPage.js';
+
 function App() {
     return (
         <AuthProvider>
@@ -86,6 +95,64 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <ProfilePage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    
+                    {/* Admin routes */}
+                    <Route 
+                        path="/admin" 
+                        element={
+                            <ProtectedRoute>
+                                <AdminPanelPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/admin/event-builder" 
+                        element={
+                            <ProtectedRoute>
+                                <EventBuilderPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/admin/venue-management" 
+                        element={
+                            <ProtectedRoute>
+                                <VenueManagementPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/admin/volunteer-management" 
+                        element={
+                            <ProtectedRoute>
+                                <VolunteerManagementPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/admin/users" 
+                        element={
+                            <ProtectedRoute>
+                                <UserManagementPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/admin/analytics" 
+                        element={
+                            <ProtectedRoute>
+                                <AnalyticsPage />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route 
+                        path="/admin/logs" 
+                        element={
+                            <ProtectedRoute>
+                                <SystemLogsPage />
                             </ProtectedRoute>
                         } 
                     />
