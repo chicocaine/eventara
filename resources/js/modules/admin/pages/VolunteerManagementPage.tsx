@@ -4,7 +4,7 @@ import ProtectedAdminRoute from '../../../shared/components/ProtectedAdminRoute.
 
 export default function VolunteerManagementPage() {
   return (
-    <ProtectedAdminRoute requiredPermissions={['manage_volunteers', 'view_volunteer_applications']} requireAll={false}>
+    <ProtectedAdminRoute requiredPermissions={['admin_access', 'manage_volunteers']} requireAll={true}>
       <AdminLayout 
         title="Volunteer Management" 
         subtitle="Manage volunteer applications, assignments, and schedules"

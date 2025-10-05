@@ -105,7 +105,7 @@ export default function SystemLogsPage() {
   });
 
   return (
-    <ProtectedAdminRoute requiredPermissions={['view_logs']}>
+    <ProtectedAdminRoute requiredPermissions={['admin_access', 'view_logs']} requireAll={true}>
       <AdminLayout 
         title="System Logs" 
         subtitle="Monitor system activities, errors, and security events"

@@ -4,7 +4,7 @@ import ProtectedAdminRoute from '../../../shared/components/ProtectedAdminRoute.
 
 export default function VenueManagementPage() {
   return (
-    <ProtectedAdminRoute requiredPermissions={['create_venues', 'edit_venues']} requireAll={false}>
+    <ProtectedAdminRoute requiredPermissions={['admin_access', 'create_venues']} requireAll={true}>
       <AdminLayout 
         title="Venue Management" 
         subtitle="Manage venues, approvals, and venue settings"

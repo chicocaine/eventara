@@ -4,7 +4,7 @@ import ProtectedAdminRoute from '../../../shared/components/ProtectedAdminRoute.
 
 export default function UserManagementPage() {
   return (
-    <ProtectedAdminRoute requiredPermissions={['manage_users']}>
+    <ProtectedAdminRoute requiredPermissions={['admin_access', 'manage_users']} requireAll={true}>
       <AdminLayout 
         title="User Management" 
         subtitle="Manage user accounts, roles, and permissions"

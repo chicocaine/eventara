@@ -4,7 +4,7 @@ import ProtectedAdminRoute from '../../../shared/components/ProtectedAdminRoute.
 
 export default function EventBuilderPage() {
   return (
-    <ProtectedAdminRoute requiredPermissions={['create_events', 'edit_events']} requireAll={false}>
+    <ProtectedAdminRoute requiredPermissions={['admin_access', 'create_events']} requireAll={true}>
       <AdminLayout 
         title="Event Builder" 
         subtitle="Create and manage events with our visual builder"
