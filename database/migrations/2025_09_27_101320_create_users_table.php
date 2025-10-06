@@ -38,6 +38,16 @@ return new class extends Migration
             $table->string('image_url')->nullable();
             $table->string('banner_url')->nullable();
             $table->string('contact_phone')->nullable();
+            $table->enum('age_group', ['17 below', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'])->nullable();
+            $table->enum('gender', ['male', 'female', 'non-binary', 'prefer-not-to-say', 'other'])->nullable();
+            $table->enum('occupation', [
+                'student', 'employed', 'self-employed', 'unemployed', 'retired', 
+                'homemaker', 'freelancer', 'entrepreneur', 'volunteer', 'other'
+            ])->nullable();
+            $table->enum('education_level', [
+                'elementary', 'high-school', 'some-college', 'bachelors', 
+                'masters', 'doctorate', 'professional', 'trade-school', 'other'
+            ])->nullable();
             $table->text('bio')->nullable();
             $table->text('mailing_address')->nullable();
             $table->jsonb('links')->nullable();
@@ -48,6 +58,10 @@ return new class extends Migration
             $table->index('alias');
             $table->index('first_name');
             $table->index('last_name');
+            $table->index('age_group');
+            $table->index('gender');
+            $table->index('occupation');
+            $table->index('education_level');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

@@ -30,6 +30,10 @@ export default function ProfilePage({}: ProfilePageProps) {
     first_name: '',
     last_name: '',
     contact_phone: '',
+    age_group: '',
+    gender: '',
+    occupation: '',
+    education_level: '',
     bio: '',
     mailing_address: '',
     links: [] as Array<{ platform: string; url: string; }>,
@@ -49,6 +53,13 @@ export default function ProfilePage({}: ProfilePageProps) {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  // Check for changes whenever formData changes, but only when editing
+  useEffect(() => {
+    if (profile && isEditing) {
+      checkForChanges();
+    }
+  }, [formData, isEditing]);
 
   // Handle URL parameters to set active tab
   useEffect(() => {
@@ -81,6 +92,10 @@ export default function ProfilePage({}: ProfilePageProps) {
           first_name: response.profile.first_name || '',
           last_name: response.profile.last_name || '',
           contact_phone: response.profile.contact_phone || '',
+          age_group: response.profile.age_group || '',
+          gender: response.profile.gender || '',
+          occupation: response.profile.occupation || '',
+          education_level: response.profile.education_level || '',
           bio: response.profile.bio || '',
           mailing_address: response.profile.mailing_address || '',
           links: response.profile.links || [],
@@ -129,59 +144,29 @@ export default function ProfilePage({}: ProfilePageProps) {
 
   // Link management functions
   const addLink = () => {
-    setFormData(prev => {
-      const newFormData = {
-        ...prev,
-        links: [...prev.links, { platform: '', url: '' }]
-      };
-      
-      // Trigger change detection with the updated data
-      if (profile) {
-        setTimeout(() => {
-          checkForChangesWithData(newFormData);
-        }, 0);
-      }
-      
-      return newFormData;
-    });
+    setFormData(prev => ({
+      ...prev,
+      links: [...prev.links, { platform: '', url: '' }]
+    }));
+    // Change detection will happen automatically via useEffect
   };
 
   const removeLink = (index: number) => {
-    setFormData(prev => {
-      const newFormData = {
-        ...prev,
-        links: prev.links.filter((_, i) => i !== index)
-      };
-      
-      // Trigger change detection with the updated data
-      if (profile) {
-        setTimeout(() => {
-          checkForChangesWithData(newFormData);
-        }, 0);
-      }
-      
-      return newFormData;
-    });
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== index)
+    }));
+    // Change detection will happen automatically via useEffect
   };
 
   const updateLink = (index: number, field: 'platform' | 'url', value: string) => {
-    setFormData(prev => {
-      const newFormData = {
-        ...prev,
-        links: prev.links.map((link, i) => 
-          i === index ? { ...link, [field]: value } : link
-        )
-      };
-      
-      // Trigger change detection with the updated data
-      if (profile) {
-        setTimeout(() => {
-          checkForChangesWithData(newFormData);
-        }, 0);
-      }
-      
-      return newFormData;
-    });
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.map((link, i) => 
+        i === index ? { ...link, [field]: value } : link
+      )
+    }));
+    // Change detection will happen automatically via useEffect
   };
 
   const handleCancelEdit = () => {
@@ -192,6 +177,10 @@ export default function ProfilePage({}: ProfilePageProps) {
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
         contact_phone: profile.contact_phone || '',
+        age_group: profile.age_group || '',
+        gender: profile.gender || '',
+        occupation: profile.occupation || '',
+        education_level: profile.education_level || '',
         bio: profile.bio || '',
         mailing_address: profile.mailing_address || '',
         links: profile.links || [],
@@ -206,13 +195,7 @@ export default function ProfilePage({}: ProfilePageProps) {
       ...prev,
       [field]: value
     }));
-    
-    // Check for changes more comprehensively
-    if (profile) {
-      setTimeout(() => {
-        checkForChanges();
-      }, 0);
-    }
+    // Change detection will happen automatically via useEffect
   };
 
   const checkForChanges = () => {
@@ -238,38 +221,12 @@ export default function ProfilePage({}: ProfilePageProps) {
       formData.first_name !== (profile.first_name || '') ||
       formData.last_name !== (profile.last_name || '') ||
       formData.contact_phone !== (profile.contact_phone || '') ||
+      formData.age_group !== (profile.age_group || '') ||
+      formData.gender !== (profile.gender || '') ||
+      formData.occupation !== (profile.occupation || '') ||
+      formData.education_level !== (profile.education_level || '') ||
       formData.bio !== (profile.bio || '') ||
       formData.mailing_address !== (profile.mailing_address || '') ||
-      linksChanged();
-    
-    setHasChanges(hasFormChanges);
-  };
-
-  const checkForChangesWithData = (customFormData: typeof formData) => {
-    if (!profile) return;
-    
-    // Helper function to compare link arrays
-    const linksChanged = () => {
-      const currentLinks = profile.links || [];
-      const formLinks = customFormData.links;
-      
-      if (currentLinks.length !== formLinks.length) return true;
-      
-      return !currentLinks.every((currentLink, index) => {
-        const formLink = formLinks[index];
-        return formLink && 
-               currentLink.platform === formLink.platform && 
-               currentLink.url === formLink.url;
-      });
-    };
-    
-    const hasFormChanges = 
-      customFormData.alias !== (profile.alias || '') ||
-      customFormData.first_name !== (profile.first_name || '') ||
-      customFormData.last_name !== (profile.last_name || '') ||
-      customFormData.contact_phone !== (profile.contact_phone || '') ||
-      customFormData.bio !== (profile.bio || '') ||
-      customFormData.mailing_address !== (profile.mailing_address || '') ||
       linksChanged();
     
     setHasChanges(hasFormChanges);
@@ -440,7 +397,10 @@ export default function ProfilePage({}: ProfilePageProps) {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-r from-gray-400 to-gray-600 flex items-center justify-center text-white text-3xl font-medium">
-                        {profile?.initials || 'U'}
+                        {profile?.first_name && profile?.last_name 
+                          ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
+                          : profile?.alias?.[0]?.toUpperCase() || 'U'
+                        }
                       </div>
                     )}
                   </div>
@@ -480,7 +440,12 @@ export default function ProfilePage({}: ProfilePageProps) {
 
                 {/* Name and Alias */}
                 <div className="flex-1 pb-4">
-                  <h1 className="text-3xl font-bold text-gray-900">{profile?.display_name}</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {profile?.first_name && profile?.last_name 
+                      ? `${profile.first_name} ${profile.last_name}`
+                      : profile?.alias || 'User'
+                    }
+                  </h1>
                   <p className="text-lg text-gray-600 mt-1">@{profile?.alias}</p>
                   {profile?.bio && (
                     <p className="text-gray-700 mt-2 max-w-2xl">{profile.bio}</p>
