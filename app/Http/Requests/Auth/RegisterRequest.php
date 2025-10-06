@@ -33,7 +33,7 @@ class RegisterRequest extends FormRequest
                 'string',
                 'confirmed',
                 Password::min(8),
-                    // ->mixedCase() -- include next time
+                    // ->mixedCase() -- temporary: will enable at production
                     // ->numbers()
                     // ->symbols()
                     // ->uncompromised(),
