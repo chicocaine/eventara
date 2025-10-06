@@ -344,4 +344,12 @@ class UserAuth extends Authenticatable
     {
         return $this->auth_provider === 'google';
     }
+
+    /**
+     * Override date serialization to include timezone information.
+     */
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d\TH:i:s.uP');
+    }
 }

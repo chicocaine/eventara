@@ -544,7 +544,7 @@ class UserManagementController extends Controller
     public function getUserStatus(int $userId): JsonResponse
     {
         try {
-            $user = UserAuth::findOrFail($userId);
+            $user = UserAuth::with(['profile', 'role'])->findOrFail($userId);
             
             return response()->json([
                 'success' => true,
@@ -552,6 +552,10 @@ class UserManagementController extends Controller
                     'id' => $user->user_id,
                     'email' => $user->email,
                     'display_name' => $user->display_name,
+                    'first_name' => $user->profile?->first_name,
+                    'last_name' => $user->profile?->last_name,
+                    'phone' => $user->profile?->phone,
+                    'alias' => $user->profile?->alias,
                     'role' => $user->role?->role,
                     'active' => $user->active,
                     'suspended' => $user->suspended,
@@ -559,6 +563,14 @@ class UserManagementController extends Controller
                     'is_volunteer' => $user->isVolunteer(),
                     'last_login' => $user->last_login?->toISOString(),
                     'created_at' => $user->created_at->toISOString(),
+                    'updated_at' => $user->updated_at->toISOString(),
+                    'email_verified_at' => $user->email_verified_at?->toISOString(),
+                    'auth_provider' => $user->auth_provider,
+                    // Demographics from profile
+                    'age_group' => $user->profile?->age_group,
+                    'gender' => $user->profile?->gender,
+                    'occupation' => $user->profile?->occupation,
+                    'education_level' => $user->profile?->education_level,
                 ]
             ]);
             

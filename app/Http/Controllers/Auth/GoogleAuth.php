@@ -121,6 +121,9 @@ class GoogleAuth extends Controller
                 
                 Auth::login($user);
                 
+                // Update last login timestamp
+                $user->updateLastLogin();
+                
                 Log::info('Google OAuth login successful', [
                     'user_id' => $user->user_id,
                     'email' => $user->email,
@@ -128,6 +131,7 @@ class GoogleAuth extends Controller
                     'auth_user_id' => Auth::id(),
                     'session_id' => session()->getId(),
                     'ip' => request()->ip(),
+                    'last_login_updated' => $user->last_login,
                 ]);
                 
                 return redirect('/dashboard')->with('success', 'Successfully logged in with Google!');
@@ -194,12 +198,16 @@ class GoogleAuth extends Controller
 
                 Auth::login($user);
                 
+                // Update last login timestamp for new user
+                $user->updateLastLogin();
+                
                 Log::info('Login attempt completed for new user', [
                     'user_id' => $user->user_id,
                     'email' => $user->email,
                     'after_login_auth_check' => Auth::check(),
                     'auth_user_id' => Auth::id(),
                     'session_id' => session()->getId(),
+                    'last_login_updated' => $user->last_login,
                 ]);
                 
                 return redirect('/dashboard')->with('success', 'Account created and logged in successfully!');
