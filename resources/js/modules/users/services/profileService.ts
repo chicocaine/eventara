@@ -14,6 +14,10 @@ interface UpdateProfileRequest {
   first_name?: string;
   last_name?: string;
   contact_phone?: string;
+  age_group?: string;
+  gender?: string;
+  occupation?: string;
+  education_level?: string;
   bio?: string;
   mailing_address?: string;
   links?: Array<{
