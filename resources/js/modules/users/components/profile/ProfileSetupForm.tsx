@@ -125,8 +125,10 @@ export default function ProfileSetupForm() {
     }
   }, [user, isLoading, navigate]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: FormEvent | React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     setErrors({});
     setMessage('');
 
@@ -319,7 +321,7 @@ export default function ProfileSetupForm() {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={(e) => e.preventDefault()}>
           {/* Stage 1: Basic Information */}
           {currentStage === 1 && (
             <div className="space-y-4">
@@ -937,7 +939,8 @@ export default function ProfileSetupForm() {
                   </button>
                 ) : (
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleSubmit}
                     disabled={isLoading || isSkipping}
                     className={`px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
                       isLoading || isSkipping
