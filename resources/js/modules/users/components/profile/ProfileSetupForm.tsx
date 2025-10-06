@@ -12,7 +12,7 @@ export default function ProfileSetupForm() {
   
   // Multi-stage form management
   const [currentStage, setCurrentStage] = useState(1);
-  const totalStages = 4;
+  const totalStages = 5;
   
   // Initialize alias from email (remove @domain part)
   const getDefaultAlias = (email: string): string => {
@@ -140,10 +140,8 @@ export default function ProfileSetupForm() {
       const response = await setupProfile(profileData);
       
       if (response.success) {
-        // Redirect to dashboard after successful profile setup
-        navigate('/dashboard', {
-          state: { message: 'Profile setup completed successfully!' }
-        });
+        // Advance to Stage 5 (completion screen) instead of redirecting
+        setCurrentStage(5);
       } else {
         setMessage(response.message);
         if (response.errors) {
@@ -209,6 +207,20 @@ export default function ProfileSetupForm() {
     setProfileData(prev => ({ ...prev, [field]: e.target.value }));
     
     // Clear specific field error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: [] }));
+    }
+    if (message) {
+      setMessage('');
+    }
+  };
+
+  const handleSelectChange = (field: keyof ProfileSetupRequest) => (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setProfileData(prev => ({ ...prev, [field]: e.target.value }));
+    
+    // Clear specific field error when user makes a selection
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: [] }));
     }
@@ -441,6 +453,30 @@ export default function ProfileSetupForm() {
                 )}
               </div>
 
+              {/* Bio */}
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  rows={3}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                    errors.bio ? 'border-red-300' : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                  placeholder="Tell us about yourself"
+                  value={profileData.bio || ''}
+                  onChange={handleInputChange('bio')}
+                  disabled={isLoading || isSkipping}
+                />
+                {errors.bio && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.bio.join(', ')}
+                  </p>
+                )}
+              </div>
+
               {/* Social Links */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -575,33 +611,139 @@ export default function ProfileSetupForm() {
             </div>
           )}
 
-          {/* Stage 4: Bio and Preferences */}
+          {/* Stage 4: Demographics & Preferences */}
           {currentStage === 4 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900 text-center">About You & Preferences</h3>
+              <h3 className="text-lg font-medium text-gray-900 text-center">Demographics & Preferences</h3>
               
-              {/* Bio Field */}
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  rows={3}
-                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                    errors.bio ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
-                  placeholder="Tell us about yourself..."
-                  value={profileData.bio || ''}
-                  onChange={handleInputChange('bio')}
-                  disabled={isLoading || isSkipping}
-                />
-                {errors.bio && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.bio.join(', ')}
-                  </p>
-                )}
+              {/* Demographics Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Age Group */}
+                <div>
+                  <label htmlFor="age_group" className="block text-sm font-medium text-gray-700">
+                    Age Group
+                  </label>
+                  <select
+                    id="age_group"
+                    name="age_group"
+                    className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                      errors.age_group ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                    value={profileData.age_group || ''}
+                    onChange={handleSelectChange('age_group')}
+                    disabled={isLoading || isSkipping}
+                  >
+                    <option value="">Select age group</option>
+                    <option value="17 below">17 and below</option>
+                    <option value="18-24">18-24</option>
+                    <option value="25-34">25-34</option>
+                    <option value="35-44">35-44</option>
+                    <option value="45-54">45-54</option>
+                    <option value="55-64">55-64</option>
+                    <option value="65+">65+</option>
+                  </select>
+                  {errors.age_group && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.age_group.join(', ')}
+                    </p>
+                  )}
+                </div>
+
+                {/* Gender */}
+                <div>
+                  <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                    Gender
+                  </label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                      errors.gender ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                    value={profileData.gender || ''}
+                    onChange={handleSelectChange('gender')}
+                    disabled={isLoading || isSkipping}
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="non-binary">Non-binary</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.gender && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.gender.join(', ')}
+                    </p>
+                  )}
+                </div>
+
+                {/* Occupation */}
+                <div>
+                  <label htmlFor="occupation" className="block text-sm font-medium text-gray-700">
+                    Occupation
+                  </label>
+                  <select
+                    id="occupation"
+                    name="occupation"
+                    className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                      errors.occupation ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                    value={profileData.occupation || ''}
+                    onChange={handleSelectChange('occupation')}
+                    disabled={isLoading || isSkipping}
+                  >
+                    <option value="">Select occupation</option>
+                    <option value="student">Student</option>
+                    <option value="employed">Employed</option>
+                    <option value="self-employed">Self-employed</option>
+                    <option value="unemployed">Unemployed</option>
+                    <option value="retired">Retired</option>
+                    <option value="homemaker">Homemaker</option>
+                    <option value="freelancer">Freelancer</option>
+                    <option value="entrepreneur">Entrepreneur</option>
+                    <option value="volunteer">Volunteer</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.occupation && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.occupation.join(', ')}
+                    </p>
+                  )}
+                </div>
+
+                {/* Education Level */}
+                <div>
+                  <label htmlFor="education_level" className="block text-sm font-medium text-gray-700">
+                    Education Level
+                  </label>
+                  <select
+                    id="education_level"
+                    name="education_level"
+                    className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                      errors.education_level ? 'border-red-300' : 'border-gray-300'
+                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
+                    value={profileData.education_level || ''}
+                    onChange={handleSelectChange('education_level')}
+                    disabled={isLoading || isSkipping}
+                  >
+                    <option value="">Select education level</option>
+                    <option value="elementary">Elementary</option>
+                    <option value="high-school">High School</option>
+                    <option value="some-college">Some College</option>
+                    <option value="bachelors">Bachelor's Degree</option>
+                    <option value="masters">Master's Degree</option>
+                    <option value="doctorate">Doctorate</option>
+                    <option value="professional">Professional Degree</option>
+                    <option value="trade-school">Trade School</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.education_level && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.education_level.join(', ')}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Preferences */}
@@ -711,88 +853,138 @@ export default function ProfileSetupForm() {
             </div>
           )}
 
-          {/* Navigation Buttons */}
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              {currentStage > 1 && (
-                <button
-                  type="button"
-                  onClick={prevStage}
-                  disabled={isLoading || isSkipping}
-                  className={`px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${
-                    isLoading || isSkipping
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  }`}
-                >
-                  Previous
-                </button>
-              )}
+          {/* Stage 5: Completion Confirmation */}
+          {currentStage === 5 && (
+            <div className="space-y-6 text-center">
+              <div className="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
               
-              <div className="flex-1"></div>
-              
-              {currentStage < totalStages ? (
-                <button
-                  type="button"
-                  onClick={nextStage}
-                  disabled={!canProceedToNext() || isLoading || isSkipping}
-                  className={`px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
-                    !canProceedToNext() || isLoading || isSkipping
-                      ? 'bg-indigo-400 cursor-not-allowed' 
-                      : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  }`}
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={isLoading || isSkipping}
-                  className={`px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
-                    isLoading || isSkipping
-                      ? 'bg-indigo-400 cursor-not-allowed' 
-                      : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-                  }`}
-                >
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Setting up profile...
-                    </>
-                  ) : (
-                    'Complete Setup'
-                  )}
-                </button>
-              )}
-            </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Profile Setup Complete!</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  Congratulations! Your profile has been successfully set up. You can always update your information later in your profile settings.
+                </p>
+              </div>
 
-            {/* Skip Button */}
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={isLoading || isSkipping}
-              className={`w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${
-                isLoading || isSkipping
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-              }`}
-            >
-              {isSkipping ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Skipping...
-                </>
-              ) : (
-                'Skip for now'
-              )}
-            </button>
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  className="px-6 py-3 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  Go to Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/profile')}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  View Profile
+                </button>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                <p>
+                  Need help? Check out our{' '}
+                  <a href="/help" className="text-indigo-600 hover:text-indigo-500">
+                    help center
+                  </a>{' '}
+                  or{' '}
+                  <a href="/contact" className="text-indigo-600 hover:text-indigo-500">
+                    contact support
+                  </a>.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          {currentStage < 5 && (
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                {currentStage > 1 && (
+                  <button
+                    type="button"
+                    onClick={prevStage}
+                    disabled={isLoading || isSkipping}
+                    className={`px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${
+                      isLoading || isSkipping
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                )}
+                
+                <div className="flex-1"></div>
+                
+                {currentStage < 4 ? (
+                  <button
+                    type="button"
+                    onClick={nextStage}
+                    disabled={!canProceedToNext() || isLoading || isSkipping}
+                    className={`px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                      !canProceedToNext() || isLoading || isSkipping
+                        ? 'bg-indigo-400 cursor-not-allowed' 
+                        : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                    }`}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={isLoading || isSkipping}
+                    className={`px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                      isLoading || isSkipping
+                        ? 'bg-indigo-400 cursor-not-allowed' 
+                        : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Setting up profile...
+                      </>
+                    ) : (
+                      'Complete Setup'
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Skip Button */}
+              <button
+                type="button"
+                onClick={handleSkip}
+                disabled={isLoading || isSkipping}
+                className={`w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white ${
+                  isLoading || isSkipping
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : 'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+                }`}
+              >
+                {isSkipping ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Skipping...
+                  </>
+                ) : (
+                  'Skip for now'
+                )}
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
