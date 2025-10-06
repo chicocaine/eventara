@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\ProfileSetupController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Auth\GoogleAuth;
 use App\Http\Controllers\CertifikaController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\User\UserEventController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication routes
@@ -58,4 +60,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/settings', [UserController::class, 'updateSettings'])->name('api.user.settings.update');
     Route::post('/user/deactivate', [UserController::class, 'deactivateAccount'])->name('api.user.deactivate');
     Route::delete('/user/delete', [UserController::class, 'deleteAccount'])->name('api.user.delete');
+});
+
+// User Event Management routes (require authentication)
+Route::middleware('auth:sanctum')->prefix('user/events')->group(function () {
+    Route::get('/', [UserEventController::class, 'index'])->name('api.user.events.index');
+    Route::post('/register', [UserEventController::class, 'register'])->name('api.user.events.register');
+    Route::put('/{registrationId}/status', [UserEventController::class, 'updateStatus'])->name('api.user.events.update-status');
+    Route::delete('/{registrationId}/cancel', [UserEventController::class, 'cancel'])->name('api.user.events.cancel');
+});
+
+// Admin routes (require authentication and admin permissions)
+Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+    // User management
+    Route::get('/users', [UserManagementController::class, 'index'])->name('api.admin.users.index');
+    Route::get('/users/stats', [UserManagementController::class, 'getStats'])->name('api.admin.users.stats');
+    Route::get('/users/{id}', [UserManagementController::class, 'getUserStatus'])->name('api.admin.users.show');
+    Route::post('/users/{id}/suspend', [UserManagementController::class, 'suspendUser'])->name('api.admin.users.suspend');
+    Route::post('/users/{id}/unsuspend', [UserManagementController::class, 'unsuspendUser'])->name('api.admin.users.unsuspend');
+    Route::put('/users/{id}/role', [UserManagementController::class, 'updateUserRole'])->name('api.admin.users.update-role');
 });

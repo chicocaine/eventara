@@ -66,11 +66,35 @@ export interface UserPreferences {
   };
 }
 
+export interface ProfileUpdateRequest {
+  alias?: string;
+  first_name?: string;
+  last_name?: string;
+  contact_phone?: string;
+  age_group?: string;
+  gender?: string;
+  occupation?: string;
+  education_level?: string;
+  mailing_address?: string;
+  image_url?: string;
+  banner_url?: string;
+  bio?: string;
+  links?: Array<{
+    platform: string;
+    url: string;
+  }>;
+  preferences?: UserPreferences;
+}
+
 export interface ProfileSetupRequest {
   alias: string;
   first_name?: string;
   last_name?: string;
   contact_phone?: string;
+  age_group?: string;
+  gender?: string;
+  occupation?: string;
+  education_level?: string;
   mailing_address?: string;
   image_url?: string;
   banner_url?: string;
@@ -92,24 +116,26 @@ export interface ProfileSetupResponse {
 
 export interface UserProfile {
   id: number;
-  user_id: number;
   alias: string;
   first_name?: string;
   last_name?: string;
+  contact_phone?: string;
+  age_group?: string;
+  gender?: string;
+  occupation?: string;
+  education_level?: string;
+  mailing_address?: string;
   image_url?: string;
   banner_url?: string;
-  contact_phone?: string;
   bio?: string;
-  mailing_address?: string;
   links?: Array<{
     platform: string;
     url: string;
   }>;
   preferences?: UserPreferences;
-  certifika_wallet?: string;
-  full_name?: string;
-  display_name: string;
-  initials: string;
+  completeness_score?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FileUploadResponse {

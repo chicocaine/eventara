@@ -1,6 +1,12 @@
 import React from 'react';
 import type { UserProfile } from '../types/auth.js';
 import { AVAILABLE_PLATFORMS, getPlatformById } from '../../../shared/config/platforms.js';
+import { 
+  AGE_GROUP_OPTIONS, 
+  GENDER_OPTIONS, 
+  OCCUPATION_OPTIONS, 
+  EDUCATION_LEVEL_OPTIONS 
+} from '../constants/profileOptions.js';
 
 interface Link {
   platform: string;
@@ -12,6 +18,10 @@ interface FormData {
   first_name: string;
   last_name: string;
   contact_phone: string;
+  age_group: string;
+  gender: string;
+  occupation: string;
+  education_level: string;
   bio: string;
   mailing_address: string;
   links: Link[];
@@ -149,6 +159,106 @@ export default function ProfileDetailsTab({
           ) : (
             <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
               {profile?.contact_phone || 'Not set'}
+            </p>
+          )}
+        </div>
+
+        {/* Age Group */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Age Group
+          </label>
+          {isEditing ? (
+            <select
+              value={formData.age_group}
+              onChange={(e) => onInputChange('age_group', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select age group</option>
+              {AGE_GROUP_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
+              {profile?.age_group ? AGE_GROUP_OPTIONS.find(opt => opt.value === profile.age_group)?.label : 'Not set'}
+            </p>
+          )}
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Gender
+          </label>
+          {isEditing ? (
+            <select
+              value={formData.gender}
+              onChange={(e) => onInputChange('gender', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select gender</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
+              {profile?.gender ? GENDER_OPTIONS.find(opt => opt.value === profile.gender)?.label : 'Not set'}
+            </p>
+          )}
+        </div>
+
+        {/* Occupation */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Occupation
+          </label>
+          {isEditing ? (
+            <select
+              value={formData.occupation}
+              onChange={(e) => onInputChange('occupation', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select occupation</option>
+              {OCCUPATION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
+              {profile?.occupation ? OCCUPATION_OPTIONS.find(opt => opt.value === profile.occupation)?.label : 'Not set'}
+            </p>
+          )}
+        </div>
+
+        {/* Education Level */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Education Level
+          </label>
+          {isEditing ? (
+            <select
+              value={formData.education_level}
+              onChange={(e) => onInputChange('education_level', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Select education level</option>
+              {EDUCATION_LEVEL_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="px-3 py-2 text-gray-900 bg-gray-50 rounded-md">
+              {profile?.education_level ? EDUCATION_LEVEL_OPTIONS.find(opt => opt.value === profile.education_level)?.label : 'Not set'}
             </p>
           )}
         </div>
