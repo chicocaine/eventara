@@ -791,7 +791,7 @@ export default function UserManagementPage() {
                           )}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                         Actions
                       </th>
                     </tr>
@@ -918,12 +918,13 @@ export default function UserManagementPage() {
                             {formatLastLogin(user.last_login)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-1">
                               {user.suspended ? (
                                 <button
                                   onClick={() => handleUserAction(user.id, 'unsuspend')}
                                   disabled={!!actionLoading[user.id]}
-                                  className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                  className="group relative p-1 text-green-600 hover:text-green-900 disabled:opacity-50 rounded-md hover:bg-green-50"
+                                  title="Unsuspend user"
                                 >
                                   {actionLoading[user.id] === 'unsuspend' ? (
                                     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -931,14 +932,20 @@ export default function UserManagementPage() {
                                       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
                                     </svg>
                                   ) : (
-                                    'Unsuspend'
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                    </svg>
                                   )}
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap">
+                                    Unsuspend
+                                  </div>
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleUserAction(user.id, 'suspend')}
                                   disabled={!!actionLoading[user.id]}
-                                  className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50"
+                                  className="group relative p-1 text-yellow-600 hover:text-yellow-900 disabled:opacity-50 rounded-md hover:bg-yellow-50"
+                                  title="Suspend user"
                                 >
                                   {actionLoading[user.id] === 'suspend' ? (
                                     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -946,8 +953,13 @@ export default function UserManagementPage() {
                                       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
                                     </svg>
                                   ) : (
-                                    'Suspend'
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                                    </svg>
                                   )}
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap">
+                                    Suspend
+                                  </div>
                                 </button>
                               )}
 
@@ -955,7 +967,8 @@ export default function UserManagementPage() {
                                 <button
                                   onClick={() => handleUserAction(user.id, 'deactivate')}
                                   disabled={!!actionLoading[user.id]}
-                                  className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                                  className="group relative p-1 text-red-600 hover:text-red-900 disabled:opacity-50 rounded-md hover:bg-red-50"
+                                  title="Deactivate user"
                                 >
                                   {actionLoading[user.id] === 'deactivate' ? (
                                     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -963,14 +976,20 @@ export default function UserManagementPage() {
                                       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
                                     </svg>
                                   ) : (
-                                    'Deactivate'
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                   )}
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap">
+                                    Deactivate
+                                  </div>
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleUserAction(user.id, 'activate')}
                                   disabled={!!actionLoading[user.id]}
-                                  className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                                  className="group relative p-1 text-green-600 hover:text-green-900 disabled:opacity-50 rounded-md hover:bg-green-50"
+                                  title="Activate user"
                                 >
                                   {actionLoading[user.id] === 'activate' ? (
                                     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -978,16 +997,28 @@ export default function UserManagementPage() {
                                       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"></path>
                                     </svg>
                                   ) : (
-                                    'Activate'
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                   )}
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap">
+                                    Activate
+                                  </div>
                                 </button>
                               )}
 
                               <button 
                                 onClick={() => handleViewUser(user.id)}
-                                className="text-gray-600 hover:text-gray-900"
+                                className="group relative p-1 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50"
+                                title="View user details"
                               >
-                                View
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap">
+                                  View Details
+                                </div>
                               </button>
                             </div>
                           </td>
