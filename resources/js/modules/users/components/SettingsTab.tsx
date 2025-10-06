@@ -103,6 +103,20 @@ export default function SettingsTab({}: SettingsTabProps) {
     return `delete-${user?.email?.split('@')[0] || 'account'}`;
   };
 
+  // Effect to manage body scroll when modals are open
+  useEffect(() => {
+    if (showDeactivateModal || showDeleteModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDeactivateModal, showDeleteModal]);
+
   const handleDeactivateAccount = async () => {
     if (deactivateConfirmText !== getRequiredDeactivateText()) {
       return;
@@ -672,8 +686,11 @@ export default function SettingsTab({}: SettingsTabProps) {
 
       {/* Deactivate Account Modal */}
       {showDeactivateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div 
+          className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          style={{ margin: 0, position: 'fixed', inset: 0 }}
+        >
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative z-10">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Deactivate Account</h3>
             <p className="text-sm text-gray-600 mb-4">
               Are you sure you want to deactivate your account? You can reactivate it anytime by logging in again.
@@ -722,8 +739,11 @@ export default function SettingsTab({}: SettingsTabProps) {
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div 
+          className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          style={{ margin: 0, position: 'fixed', inset: 0 }}
+        >
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative z-10">
             <h3 className="text-lg font-medium text-red-900 mb-4">Delete Account</h3>
             <div className="mb-4">
               <div className="flex items-center mb-2">
