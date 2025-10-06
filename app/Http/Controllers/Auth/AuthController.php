@@ -12,6 +12,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -39,6 +40,12 @@ class AuthController extends Controller
             );
 
             if ($request->expectsJson()) {
+                // Get user permissions
+                $permissions = [];
+                if ($user->role && $user->role->permissions) {
+                    $permissions = $user->role->permissions->pluck('permission')->toArray();
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Login successful',
@@ -47,6 +54,7 @@ class AuthController extends Controller
                         'email' => $user->email,
                         'display_name' => $user->display_name,
                         'role' => $user->role?->role,
+                        'permissions' => $permissions,
                         'active' => $user->active,
                         'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),
@@ -98,6 +106,12 @@ class AuthController extends Controller
             $redirectUrl = $user->hasCompletedProfileSetup() ? '/dashboard' : '/profile-setup';
 
             if ($request->expectsJson()) {
+                // Get user permissions
+                $permissions = [];
+                if ($user->role && $user->role->permissions) {
+                    $permissions = $user->role->permissions->pluck('permission')->toArray();
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Registration successful',
@@ -106,6 +120,7 @@ class AuthController extends Controller
                         'email' => $user->email,
                         'display_name' => $user->display_name,
                         'role' => $user->role?->role,
+                        'permissions' => $permissions,
                         'active' => $user->active,
                         'suspended' => $user->suspended,
                         'is_volunteer' => $user->isVolunteer(),

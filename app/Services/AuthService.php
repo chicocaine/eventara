@@ -26,8 +26,8 @@ class AuthService
      */
     public function login(string $email, string $password, bool $remember = false): UserAuth
     {
-        // Find user by email first
-        $user = UserAuth::where('email', $email)->first();
+        // Find user by email first with role and permissions
+        $user = UserAuth::with(['role.permissions', 'profile'])->where('email', $email)->first();
         
         if (!$user || !Hash::check($password, $user->password)) {
             Log::warning('Failed login attempt', [
@@ -122,7 +122,8 @@ class AuthService
                 'ip' => request()->ip(),
             ]);
 
-            return $user;
+            // Reload user with role and permissions
+            return $user->load(['role.permissions', 'profile']);
 
         } catch (QueryException $e) {
             Log::error('Database error during user registration', [
@@ -187,7 +188,11 @@ class AuthService
      */
     public function getAuthenticatedUser(): ?UserAuth
     {
-        return Auth::user();
+        $user = Auth::user();
+        if ($user && $user instanceof UserAuth) {
+            return $user->load(['role.permissions', 'profile']);
+        }
+        return null;
     }
 
     /**

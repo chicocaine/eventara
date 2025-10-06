@@ -94,6 +94,14 @@ class ProfileSetupController extends Controller
                 'alias' => $profile->alias,
             ]);
 
+            // Reload user with relationships to ensure we have complete data
+            $userWithPermissions = \App\Models\UserAuth::with('role.permissions')->find($user->user_id);
+            
+            // Extract permissions
+            $permissions = $userWithPermissions->role && $userWithPermissions->role->permissions 
+                ? $userWithPermissions->role->permissions->pluck('permission')->toArray()
+                : [];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Profile setup completed successfully!',
@@ -102,7 +110,10 @@ class ProfileSetupController extends Controller
                     'email' => $user->email,
                     'display_name' => $profile->display_name,
                     'role' => $user->role?->role,
+                    'permissions' => $permissions,
                     'active' => $user->active,
+                    'suspended' => $user->suspended,
+                    'is_volunteer' => $user->is_volunteer,
                 ],
                 'profile' => [
                     'id' => $profile->id,
