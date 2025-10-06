@@ -28,46 +28,60 @@ class UserEventController extends Controller
             ], 401);
         }
 
-        $query = $user->userEvents()->with(['event', 'session']);
+        try {
+            $query = $user->userEvents()->with(['event', 'session']);
 
-        // Filter by status if provided
-        if ($request->has('status')) {
-            $statuses = is_array($request->status) ? $request->status : [$request->status];
-            $query->whereIn('status', $statuses);
+            // Filter by status if provided
+            if ($request->has('status')) {
+                $statuses = is_array($request->status) ? $request->status : [$request->status];
+                $query->whereIn('status', $statuses);
+            }
+
+            // Filter by active/inactive registrations
+            if ($request->boolean('active_only')) {
+                $query->active();
+            }
+
+            $userEvents = $query->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'success' => true,
+                'registrations' => $userEvents->map(function ($userEvent) {
+                    return [
+                        'id' => $userEvent->user_event_id,
+                        'status' => $userEvent->status,
+                        'registered_at' => $userEvent->created_at,
+                        'event' => [
+                            'id' => $userEvent->event->event_id,
+                            'title' => $userEvent->event->title,
+                            'description' => $userEvent->event->description,
+                            'start_date' => $userEvent->event->start_date,
+                            'end_date' => $userEvent->event->end_date,
+                            'status' => $userEvent->event->event_status,
+                        ],
+                        'session' => $userEvent->session ? [
+                            'id' => $userEvent->session->session_id,
+                            'title' => $userEvent->session->title,
+                            'date' => $userEvent->session->session_date,
+                            'start_time' => $userEvent->session->start_time,
+                            'end_time' => $userEvent->session->end_time,
+                        ] : null,
+                    ];
+                }),
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve user events', [
+                'user_id' => $user->user_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve event registrations.',
+            ], 500);
         }
-
-        // Filter by active/inactive registrations
-        if ($request->boolean('active_only')) {
-            $query->active();
-        }
-
-        $userEvents = $query->orderBy('created_at', 'desc')->get();
-
-        return response()->json([
-            'success' => true,
-            'registrations' => $userEvents->map(function ($userEvent) {
-                return [
-                    'id' => $userEvent->user_event_id,
-                    'status' => $userEvent->status,
-                    'registered_at' => $userEvent->created_at,
-                    'event' => [
-                        'id' => $userEvent->event->event_id,
-                        'title' => $userEvent->event->title,
-                        'description' => $userEvent->event->description,
-                        'start_date' => $userEvent->event->start_date,
-                        'end_date' => $userEvent->event->end_date,
-                        'status' => $userEvent->event->event_status,
-                    ],
-                    'session' => $userEvent->session ? [
-                        'id' => $userEvent->session->session_id,
-                        'title' => $userEvent->session->title,
-                        'date' => $userEvent->session->session_date,
-                        'start_time' => $userEvent->session->start_time,
-                        'end_time' => $userEvent->session->end_time,
-                    ] : null,
-                ];
-            }),
-        ]);
     }
 
     /**
