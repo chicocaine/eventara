@@ -57,6 +57,10 @@ class ProfileController extends Controller
                 'full_name' => $profile->full_name,
                 'display_name' => $profile->display_name,
                 'initials' => $profile->initials,
+                'age_group' => $profile->age_group,
+                'gender' => $profile->gender,
+                'occupation' => $profile->occupation,
+                'education_level' => $profile->education_level,
             ],
         ]);
     }
@@ -92,6 +96,10 @@ class ProfileController extends Controller
             'first_name' => 'nullable|string|max:100',
             'last_name' => 'nullable|string|max:100',
             'contact_phone' => 'nullable|string|max:20',
+            'age_group' => 'nullable|in:17 below,18-24,25-34,35-44,45-54,55-64,65+',
+            'gender' => 'nullable|in:male,female,non-binary,prefer-not-to-say,other',
+            'occupation' => 'nullable|in:student,employed,self-employed,unemployed,retired,homemaker,freelancer,entrepreneur,volunteer,other',
+            'education_level' => 'nullable|in:elementary,high-school,some-college,bachelors,masters,doctorate,professional,trade-school,other',
             'bio' => 'nullable|string|max:500',
             'mailing_address' => 'nullable|string|max:500',
             'links' => 'nullable|array',
@@ -113,6 +121,10 @@ class ProfileController extends Controller
                 'first_name' => $request->input('first_name'),
                 'last_name' => $request->input('last_name'),
                 'contact_phone' => $request->input('contact_phone'),
+                'age_group' => $request->input('age_group'),
+                'gender' => $request->input('gender'),
+                'occupation' => $request->input('occupation'),
+                'education_level' => $request->input('education_level'),
                 'bio' => $request->input('bio'),
                 'mailing_address' => $request->input('mailing_address'),
             ];
@@ -135,7 +147,7 @@ class ProfileController extends Controller
             Log::info('Profile updated', [
                 'user_id' => $user->user_id,
                 'profile_id' => $profile->id,
-                'changes' => $request->only(['alias', 'first_name', 'last_name', 'contact_phone', 'bio', 'mailing_address', 'links']),
+                'changes' => $request->only(['alias', 'first_name', 'last_name', 'contact_phone', 'age_group', 'gender', 'occupation', 'education_level', 'bio', 'mailing_address', 'links']),
             ]);
 
             return response()->json([

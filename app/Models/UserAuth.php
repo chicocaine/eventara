@@ -119,6 +119,29 @@ class UserAuth extends Authenticatable
     }
 
     /**
+     * Get user's event registrations.
+     */
+    public function userEvents(): HasMany
+    {
+        return $this->hasMany(UserEvent::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Get events the user is registered for (through user_events).
+     */
+    public function registeredEvents()
+    {
+        return $this->hasManyThrough(
+            Event::class,
+            UserEvent::class,
+            'user_id',      // Foreign key on user_events table
+            'event_id',     // Foreign key on events table
+            'user_id',      // Local key on users_auth table
+            'event_id'      // Local key on user_events table
+        );
+    }
+
+    /**
      * Check if user has a specific permission.
      */
     public function hasPermission(string $permission): bool

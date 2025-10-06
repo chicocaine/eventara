@@ -93,6 +93,29 @@ class Event extends Model
     }
 
     /**
+     * Get user registrations for this event.
+     */
+    public function userEvents(): HasMany
+    {
+        return $this->hasMany(UserEvent::class, 'event_id', 'event_id');
+    }
+
+    /**
+     * Get registered users for this event (through user_events).
+     */
+    public function registeredUsers()
+    {
+        return $this->hasManyThrough(
+            UserAuth::class,
+            UserEvent::class,
+            'event_id',     // Foreign key on user_events table
+            'user_id',      // Foreign key on users_auth table
+            'event_id',     // Local key on events table
+            'user_id'       // Local key on user_events table
+        );
+    }
+
+    /**
      * Get the duration of the event in days.
      */
     public function getDurationDaysAttribute(): int

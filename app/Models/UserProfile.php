@@ -14,6 +14,36 @@ class UserProfile extends Model
     protected $primaryKey = 'id';
 
     /**
+     * Age group options.
+     */
+    public const AGE_GROUPS = [
+        '17 below', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'
+    ];
+
+    /**
+     * Gender options.
+     */
+    public const GENDERS = [
+        'male', 'female', 'non-binary', 'prefer-not-to-say', 'other'
+    ];
+
+    /**
+     * Occupation options.
+     */
+    public const OCCUPATIONS = [
+        'student', 'employed', 'self-employed', 'unemployed', 'retired',
+        'homemaker', 'freelancer', 'entrepreneur', 'volunteer', 'other'
+    ];
+
+    /**
+     * Education level options.
+     */
+    public const EDUCATION_LEVELS = [
+        'elementary', 'high-school', 'some-college', 'bachelors',
+        'masters', 'doctorate', 'professional', 'trade-school', 'other'
+    ];
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
@@ -24,6 +54,10 @@ class UserProfile extends Model
         'image_url',
         'banner_url',
         'contact_phone',
+        'age_group',
+        'gender',
+        'occupation',
+        'education_level',
         'bio',
         'mailing_address',
         'links',
@@ -101,5 +135,65 @@ class UserProfile extends Model
               ->orWhere('first_name', 'ILIKE', "%{$search}%")
               ->orWhere('last_name', 'ILIKE', "%{$search}%");
         });
+    }
+
+    /**
+     * Get all available age group options.
+     */
+    public static function getAgeGroupOptions(): array
+    {
+        return self::AGE_GROUPS;
+    }
+
+    /**
+     * Get all available gender options.
+     */
+    public static function getGenderOptions(): array
+    {
+        return self::GENDERS;
+    }
+
+    /**
+     * Get all available occupation options.
+     */
+    public static function getOccupationOptions(): array
+    {
+        return self::OCCUPATIONS;
+    }
+
+    /**
+     * Get all available education level options.
+     */
+    public static function getEducationLevelOptions(): array
+    {
+        return self::EDUCATION_LEVELS;
+    }
+
+    /**
+     * Check if profile has demographic information filled.
+     */
+    public function hasDemographicInfo(): bool
+    {
+        return !empty($this->age_group) || 
+               !empty($this->gender) || 
+               !empty($this->occupation) || 
+               !empty($this->education_level);
+    }
+
+    /**
+     * Get demographic completion percentage.
+     */
+    public function getDemographicCompletionAttribute(): int
+    {
+        $fields = ['age_group', 'gender', 'occupation', 'education_level'];
+        $completed = 0;
+        
+        foreach ($fields as $field) {
+            if (!empty($this->$field)) {
+                $completed++;
+            }
+        }
+        
+        return round(($completed / count($fields)) * 100);
     }
 }

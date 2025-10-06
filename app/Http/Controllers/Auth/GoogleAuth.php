@@ -248,6 +248,11 @@ class GoogleAuth extends Controller
             'image_url' => $googleUser->avatar ?? null,
             'banner_url' => null, // No default banner from Google
             'bio' => null,
+            // New fields - all nullable, no defaults from Google
+            'age_group' => null,
+            'gender' => null,
+            'occupation' => null,
+            'education_level' => null,
             'preferences' => $this->getDefaultPreferences(),
         ]);
     }
