@@ -78,5 +78,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('/users/{id}', [UserManagementController::class, 'getUserStatus'])->name('api.admin.users.show');
     Route::post('/users/{id}/suspend', [UserManagementController::class, 'suspendUser'])->name('api.admin.users.suspend');
     Route::post('/users/{id}/unsuspend', [UserManagementController::class, 'unsuspendUser'])->name('api.admin.users.unsuspend');
+    Route::post('/users/{id}/deactivate', [UserManagementController::class, 'deactivateUser'])->name('api.admin.users.deactivate');
+    Route::post('/users/{id}/activate', [UserManagementController::class, 'activateUser'])->name('api.admin.users.activate');
     Route::put('/users/{id}/role', [UserManagementController::class, 'updateUserRole'])->name('api.admin.users.update-role');
 });

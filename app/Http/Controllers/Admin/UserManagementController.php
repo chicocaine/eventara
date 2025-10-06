@@ -67,8 +67,78 @@ class UserManagementController extends Controller
                 }
             }
 
-            // Order by creation date (newest first)
-            $query->orderBy('created_at', 'desc');
+            // Filter by age group
+            if ($ageGroupFilter = $request->get('age_group')) {
+                if ($ageGroupFilter !== 'all') {
+                    $query->whereHas('profile', function (Builder $profileQuery) use ($ageGroupFilter) {
+                        $profileQuery->where('age_group', $ageGroupFilter);
+                    });
+                }
+            }
+
+            // Filter by gender
+            if ($genderFilter = $request->get('gender')) {
+                if ($genderFilter !== 'all') {
+                    $query->whereHas('profile', function (Builder $profileQuery) use ($genderFilter) {
+                        $profileQuery->where('gender', $genderFilter);
+                    });
+                }
+            }
+
+            // Filter by occupation
+            if ($occupationFilter = $request->get('occupation')) {
+                if ($occupationFilter !== 'all') {
+                    $query->whereHas('profile', function (Builder $profileQuery) use ($occupationFilter) {
+                        $profileQuery->where('occupation', $occupationFilter);
+                    });
+                }
+            }
+
+            // Filter by education level
+            if ($educationFilter = $request->get('education_level')) {
+                if ($educationFilter !== 'all') {
+                    $query->whereHas('profile', function (Builder $profileQuery) use ($educationFilter) {
+                        $profileQuery->where('education_level', $educationFilter);
+                    });
+                }
+            }
+
+            // Sorting
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortDirection = $request->get('sort_direction', 'desc');
+            
+            // Validate sort direction
+            $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
+            
+            // Apply sorting based on field
+            switch ($sortBy) {
+                case 'email':
+                case 'created_at':
+                case 'last_login':
+                case 'active':
+                case 'suspended':
+                    $query->orderBy($sortBy, $sortDirection);
+                    break;
+                case 'role':
+                    $query->leftJoin('roles', 'users_auth.role_id', '=', 'roles.role_id')
+                          ->orderBy('roles.role', $sortDirection)
+                          ->select('users_auth.*');
+                    break;
+                case 'first_name':
+                case 'last_name':
+                case 'alias':
+                case 'age_group':
+                case 'gender':
+                case 'occupation':
+                case 'education_level':
+                    $query->leftJoin('users_profile', 'users_auth.user_id', '=', 'users_profile.user_id')
+                          ->orderBy("users_profile.{$sortBy}", $sortDirection)
+                          ->select('users_auth.*');
+                    break;
+                default:
+                    // Default to creation date if invalid sort field
+                    $query->orderBy('created_at', 'desc');
+            }
 
             // Paginate results
             $perPage = min($request->get('per_page', 15), 100); // Max 100 per page
@@ -91,6 +161,11 @@ class UserManagementController extends Controller
                     'last_login' => $user->last_login?->toISOString(),
                     'created_at' => $user->created_at->toISOString(),
                     'auth_provider' => $user->auth_provider,
+                    // Demographics
+                    'age_group' => $user->profile?->age_group,
+                    'gender' => $user->profile?->gender,
+                    'occupation' => $user->profile?->occupation,
+                    'education_level' => $user->profile?->education_level,
                 ];
             });
 
@@ -157,6 +232,43 @@ class UserManagementController extends Controller
                 'last_month' => UserAuth::where('last_login', '>=', now()->subMonth())->count(),
             ];
 
+            // Demographic statistics
+            $ageGroupStats = UserAuth::with('profile')
+                                    ->get()
+                                    ->groupBy(function ($user) {
+                                        return $user->profile?->age_group ?? 'not_specified';
+                                    })
+                                    ->map(function ($users) {
+                                        return $users->count();
+                                    });
+
+            $genderStats = UserAuth::with('profile')
+                                  ->get()
+                                  ->groupBy(function ($user) {
+                                      return $user->profile?->gender ?? 'not_specified';
+                                  })
+                                  ->map(function ($users) {
+                                      return $users->count();
+                                  });
+
+            $occupationStats = UserAuth::with('profile')
+                                      ->get()
+                                      ->groupBy(function ($user) {
+                                          return $user->profile?->occupation ?? 'not_specified';
+                                      })
+                                      ->map(function ($users) {
+                                          return $users->count();
+                                      });
+
+            $educationStats = UserAuth::with('profile')
+                                     ->get()
+                                     ->groupBy(function ($user) {
+                                         return $user->profile?->education_level ?? 'not_specified';
+                                     })
+                                     ->map(function ($users) {
+                                         return $users->count();
+                                     });
+
             return response()->json([
                 'success' => true,
                 'stats' => [
@@ -167,6 +279,12 @@ class UserManagementController extends Controller
                     'new_this_week' => $newThisWeek,
                     'users_by_role' => $usersByRole,
                     'login_activity' => $lastLoginStats,
+                    'demographics' => [
+                        'age_groups' => $ageGroupStats,
+                        'genders' => $genderStats,
+                        'occupations' => $occupationStats,
+                        'education_levels' => $educationStats,
+                    ]
                 ]
             ]);
 
@@ -234,6 +352,107 @@ class UserManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update user role: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Deactivate a user account.
+     *
+     * @param Request $request
+     * @param int $userId
+     * @return JsonResponse
+     */
+    public function deactivateUser(Request $request, int $userId): JsonResponse
+    {
+        try {
+            $user = UserAuth::findOrFail($userId);
+            
+            // Prevent users from deactivating their own account
+            $currentUser = Auth::user();
+            if ($currentUser && $currentUser->user_id === $userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You cannot deactivate your own account.'
+                ], 400);
+            }
+            
+            if (!$user->active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is already deactivated.'
+                ], 400);
+            }
+            
+            $user->update(['active' => false]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'User has been deactivated successfully.',
+                'user' => [
+                    'id' => $user->user_id,
+                    'email' => $user->email,
+                    'display_name' => $user->display_name,
+                    'active' => $user->active,
+                    'can_login' => $user->canLogin(),
+                ]
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deactivate user: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Activate a user account.
+     *
+     * @param Request $request
+     * @param int $userId
+     * @return JsonResponse
+     */
+    public function activateUser(Request $request, int $userId): JsonResponse
+    {
+        try {
+            $user = UserAuth::findOrFail($userId);
+            
+            if ($user->active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is already active.'
+                ], 400);
+            }
+            
+            $user->update(['active' => true]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'User has been activated successfully.',
+                'user' => [
+                    'id' => $user->user_id,
+                    'email' => $user->email,
+                    'display_name' => $user->display_name,
+                    'active' => $user->active,
+                    'can_login' => $user->canLogin(),
+                ]
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to activate user: ' . $e->getMessage()
             ], 500);
         }
     }
