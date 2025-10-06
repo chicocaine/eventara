@@ -5,6 +5,7 @@ export interface User {
   name?: string; // For Google OAuth
   avatar?: string; // For Google OAuth profile picture
   role?: string;
+  permissions?: string[]; // Array of permission strings
   active?: boolean;
   is_volunteer?: boolean;
   auth_provider?: string; // 'google', 'email', etc.

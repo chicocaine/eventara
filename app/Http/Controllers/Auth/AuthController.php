@@ -161,6 +161,12 @@ class AuthController extends Controller
 
         $user = $this->authService->getAuthenticatedUser();
 
+        // Get user permissions
+        $permissions = [];
+        if ($user->role && $user->role->permissions) {
+            $permissions = $user->role->permissions->pluck('permission')->toArray();
+        }
+
         return response()->json([
             'authenticated' => true,
             'user' => [
@@ -168,6 +174,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'display_name' => $user->display_name,
                 'role' => $user->role?->role,
+                'permissions' => $permissions,
                 'active' => $user->active,
                 'suspended' => $user->suspended,
                 'is_volunteer' => $user->isVolunteer(),
