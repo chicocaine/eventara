@@ -1476,15 +1476,6 @@ export default function UserManagementPage() {
                   >
                     Close
                   </button>
-                  <button
-                    onClick={() => {
-                      handleCloseUserDetail();
-                      // Could implement edit user functionality here
-                    }}
-                    className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transition-all duration-200"
-                  >
-                    Edit User
-                  </button>
                 </div>
               </div>
             </div>
