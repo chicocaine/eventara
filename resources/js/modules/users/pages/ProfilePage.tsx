@@ -78,6 +78,11 @@ export default function ProfilePage({}: ProfilePageProps) {
     }
   }, [activeTab]);
 
+  // Reset editing mode when switching tabs
+  useEffect(() => {
+    setIsEditing(false);
+  }, [activeTab]);
+
   const loadProfile = async () => {
     try {
       setIsLoading(true);
