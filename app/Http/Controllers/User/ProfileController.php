@@ -3,16 +3,23 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserAuth;
-use App\Models\UserProfile;
+use App\Services\ProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
+    protected ProfileService $profileService;
+
+    public function __construct(ProfileService $profileService)
+    {
+        $this->profileService = $profileService;
+    }
+
     /**
      * Get user's profile.
      *
@@ -29,40 +36,20 @@ class ProfileController extends Controller
             ], 401);
         }
 
-        $profile = $user->profile;
-        
-        if (!$profile) {
+        try {
+            $profile = $this->profileService->getUserProfile($user);
+
+            return response()->json([
+                'success' => true,
+                'profile' => $this->profileService->transformProfileToArray($profile),
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Profile not found.',
+                'message' => $e->getMessage(),
             ], 404);
         }
-
-        return response()->json([
-            'success' => true,
-            'profile' => [
-                'id' => $profile->id,
-                'user_id' => $profile->user_id,
-                'alias' => $profile->alias,
-                'first_name' => $profile->first_name,
-                'last_name' => $profile->last_name,
-                'image_url' => $profile->image_url,
-                'banner_url' => $profile->banner_url,
-                'contact_phone' => $profile->contact_phone,
-                'bio' => $profile->bio,
-                'mailing_address' => $profile->mailing_address,
-                'links' => $profile->links,
-                'preferences' => $profile->preferences,
-                'certifika_wallet' => $profile->certifika_wallet,
-                'full_name' => $profile->full_name,
-                'display_name' => $profile->display_name,
-                'initials' => $profile->initials,
-                'age_group' => $profile->age_group,
-                'gender' => $profile->gender,
-                'occupation' => $profile->occupation,
-                'education_level' => $profile->education_level,
-            ],
-        ]);
     }
 
     /**
@@ -82,108 +69,23 @@ class ProfileController extends Controller
             ], 401);
         }
 
-        $profile = $user->profile;
-        
-        if (!$profile) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Profile not found.',
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'alias' => 'required|string|max:50|unique:users_profile,alias,' . $profile->id,
-            'first_name' => 'nullable|string|max:100',
-            'last_name' => 'nullable|string|max:100',
-            'contact_phone' => 'nullable|string|max:20',
-            'age_group' => 'nullable|in:17 below,18-24,25-34,35-44,45-54,55-64,65+',
-            'gender' => 'nullable|in:male,female,non-binary,prefer-not-to-say,other',
-            'occupation' => 'nullable|in:student,employed,self-employed,unemployed,retired,homemaker,freelancer,entrepreneur,volunteer,other',
-            'education_level' => 'nullable|in:elementary,high-school,some-college,bachelors,masters,doctorate,professional,trade-school,other',
-            'bio' => 'nullable|string|max:500',
-            'mailing_address' => 'nullable|string|max:500',
-            'links' => 'nullable|array',
-            'links.*.platform' => 'required_with:links.*|string|max:50',
-            'links.*.url' => 'required_with:links.*|url|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please check your input and try again.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         try {
-            $updateData = [
-                'alias' => $request->input('alias'),
-                'first_name' => $request->input('first_name'),
-                'last_name' => $request->input('last_name'),
-                'contact_phone' => $request->input('contact_phone'),
-                'age_group' => $request->input('age_group'),
-                'gender' => $request->input('gender'),
-                'occupation' => $request->input('occupation'),
-                'education_level' => $request->input('education_level'),
-                'bio' => $request->input('bio'),
-                'mailing_address' => $request->input('mailing_address'),
-            ];
-
-            // Handle links JSON properly
-            if ($request->has('links')) {
-                $links = $request->input('links');
-                // Filter out empty links and validate structure
-                $filteredLinks = array_filter($links, function($link) {
-                    return is_array($link) && 
-                           !empty(trim($link['platform'] ?? '')) && 
-                           !empty(trim($link['url'] ?? ''));
-                });
-                // Reindex array to remove gaps
-                $updateData['links'] = empty($filteredLinks) ? null : array_values($filteredLinks);
-            }
-
-            $profile->update($updateData);
-
-            Log::info('Profile updated', [
-                'user_id' => $user->user_id,
-                'profile_id' => $profile->id,
-                'changes' => $request->only(['alias', 'first_name', 'last_name', 'contact_phone', 'age_group', 'gender', 'occupation', 'education_level', 'bio', 'mailing_address', 'links']),
-            ]);
+            $profile = $this->profileService->updateProfile($user, $request->all());
 
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully!',
-                'profile' => [
-                    'id' => $profile->id,
-                    'user_id' => $profile->user_id,
-                    'alias' => $profile->alias,
-                    'first_name' => $profile->first_name,
-                    'last_name' => $profile->last_name,
-                    'image_url' => $profile->image_url,
-                    'banner_url' => $profile->banner_url,
-                    'contact_phone' => $profile->contact_phone,
-                    'age_group' => $profile->age_group,
-                    'gender' => $profile->gender,
-                    'occupation' => $profile->occupation,
-                    'education_level' => $profile->education_level,
-                    'bio' => $profile->bio,
-                    'mailing_address' => $profile->mailing_address,
-                    'links' => $profile->links,
-                    'preferences' => $profile->preferences,
-                    'certifika_wallet' => $profile->certifika_wallet,
-                    'full_name' => $profile->full_name,
-                    'display_name' => $profile->display_name,
-                    'initials' => $profile->initials,
-                ],
+                'profile' => $this->profileService->transformProfileToArray($profile),
             ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please check your input and try again.',
+                'errors' => $e->errors(),
+            ], 422);
 
         } catch (\Exception $e) {
-            Log::error('Profile update failed', [
-                'user_id' => $user->user_id,
-                'profile_id' => $profile->id,
-                'error' => $e->getMessage(),
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update profile. Please try again.',

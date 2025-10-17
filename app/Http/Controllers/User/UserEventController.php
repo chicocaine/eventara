@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Event;
-use App\Models\EventSession;
-use App\Models\UserEvent;
+use App\Services\UserEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class UserEventController extends Controller
 {
+    protected UserEventService $userEventService;
+
+    public function __construct(UserEventService $userEventService)
+    {
+        $this->userEventService = $userEventService;
+    }
+
     /**
      * Get user's event registrations.
      */
@@ -29,44 +34,17 @@ class UserEventController extends Controller
         }
 
         try {
-            $query = $user->userEvents()->with(['event', 'session']);
+            $filters = [
+                'status' => $request->input('status'),
+                'active_only' => $request->boolean('active_only'),
+            ];
 
-            // Filter by status if provided
-            if ($request->has('status')) {
-                $statuses = is_array($request->status) ? $request->status : [$request->status];
-                $query->whereIn('status', $statuses);
-            }
-
-            // Filter by active/inactive registrations
-            if ($request->boolean('active_only')) {
-                $query->active();
-            }
-
-            $userEvents = $query->orderBy('created_at', 'desc')->get();
+            $userEvents = $this->userEventService->getUserRegistrations($user, $filters);
 
             return response()->json([
                 'success' => true,
                 'registrations' => $userEvents->map(function ($userEvent) {
-                    return [
-                        'id' => $userEvent->user_event_id,
-                        'status' => $userEvent->status,
-                        'registered_at' => $userEvent->created_at,
-                        'event' => [
-                            'id' => $userEvent->event->event_id,
-                            'title' => $userEvent->event->title,
-                            'description' => $userEvent->event->description,
-                            'start_date' => $userEvent->event->start_date,
-                            'end_date' => $userEvent->event->end_date,
-                            'status' => $userEvent->event->event_status,
-                        ],
-                        'session' => $userEvent->session ? [
-                            'id' => $userEvent->session->session_id,
-                            'title' => $userEvent->session->title,
-                            'date' => $userEvent->session->session_date,
-                            'start_time' => $userEvent->session->start_time,
-                            'end_time' => $userEvent->session->end_time,
-                        ] : null,
-                    ];
+                    return $this->userEventService->transformUserEventToArray($userEvent);
                 }),
             ]);
             
@@ -98,72 +76,8 @@ class UserEventController extends Controller
             ], 401);
         }
 
-        $validator = Validator::make($request->all(), [
-            'event_id' => 'required|exists:events,event_id',
-            'session_id' => 'nullable|exists:event_sessions,session_id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid input.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $eventId = $request->input('event_id');
-        $sessionId = $request->input('session_id');
-
-        // Verify event exists and is published
-        $event = Event::where('event_id', $eventId)->first();
-        if (!$event || !$event->isPublished()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Event not found or not available for registration.',
-            ], 404);
-        }
-
-        // If session_id provided, verify it belongs to the event
-        if ($sessionId) {
-            $session = EventSession::where('session_id', $sessionId)
-                                  ->where('event_id', $eventId)
-                                  ->first();
-            if (!$session) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid session for this event.',
-                ], 400);
-            }
-        }
-
-        // Check if user is already registered
-        $existingRegistration = UserEvent::where('user_id', $user->user_id)
-                                        ->where('event_id', $eventId)
-                                        ->where('session_id', $sessionId)
-                                        ->first();
-
-        if ($existingRegistration) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are already registered for this event/session.',
-                'current_status' => $existingRegistration->status,
-            ], 409);
-        }
-
         try {
-            $userEvent = UserEvent::create([
-                'user_id' => $user->user_id,
-                'event_id' => $eventId,
-                'session_id' => $sessionId,
-                'status' => UserEvent::STATUS_REGISTERED,
-            ]);
-
-            Log::info('User registered for event', [
-                'user_id' => $user->user_id,
-                'event_id' => $eventId,
-                'session_id' => $sessionId,
-                'registration_id' => $userEvent->user_event_id,
-            ]);
+            $userEvent = $this->userEventService->registerForEvent($user, $request->all());
 
             return response()->json([
                 'success' => true,
@@ -175,18 +89,35 @@ class UserEventController extends Controller
                 ],
             ], 201);
 
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid input.',
+                'errors' => $e->errors(),
+            ], 422);
+
         } catch (\Exception $e) {
+            // Check if it's a specific business logic error
+            $statusCode = 500;
+            $message = $e->getMessage();
+
+            if (str_contains($message, 'already registered')) {
+                $statusCode = 409;
+            } elseif (str_contains($message, 'not found') || str_contains($message, 'not available')) {
+                $statusCode = 404;
+            } elseif (str_contains($message, 'Invalid session')) {
+                $statusCode = 400;
+            }
+
             Log::error('Event registration failed', [
                 'user_id' => $user->user_id,
-                'event_id' => $eventId,
-                'session_id' => $sessionId,
-                'error' => $e->getMessage(),
+                'error' => $message,
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed. Please try again.',
-            ], 500);
+                'message' => $message,
+            ], $statusCode);
         }
     }
 
@@ -204,50 +135,29 @@ class UserEventController extends Controller
             ], 401);
         }
 
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|in:' . implode(',', UserEvent::getStatusOptions()),
-        ]);
+        try {
+            $status = $request->input('status');
+            $userEvent = $this->userEventService->updateRegistrationStatus($user, $registrationId, $status);
 
-        if ($validator->fails()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration status updated successfully!',
+                'registration' => [
+                    'id' => $userEvent->user_event_id,
+                    'status' => $userEvent->status,
+                    'updated_at' => $userEvent->updated_at,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'not found') ? 404 : 
+                         (str_contains($e->getMessage(), 'Invalid') ? 422 : 500);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid status.',
-                'errors' => $validator->errors(),
-            ], 422);
+                'message' => $e->getMessage(),
+            ], $statusCode);
         }
-
-        $userEvent = UserEvent::where('user_event_id', $registrationId)
-                             ->where('user_id', $user->user_id)
-                             ->first();
-
-        if (!$userEvent) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration not found.',
-            ], 404);
-        }
-
-        $oldStatus = $userEvent->status;
-        $newStatus = $request->input('status');
-
-        $userEvent->update(['status' => $newStatus]);
-
-        Log::info('User event status updated', [
-            'user_id' => $user->user_id,
-            'registration_id' => $registrationId,
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration status updated successfully!',
-            'registration' => [
-                'id' => $userEvent->user_event_id,
-                'status' => $userEvent->status,
-                'updated_at' => $userEvent->updated_at,
-            ],
-        ]);
     }
 
     /**
@@ -264,35 +174,27 @@ class UserEventController extends Controller
             ], 401);
         }
 
-        $userEvent = UserEvent::where('user_event_id', $registrationId)
-                             ->where('user_id', $user->user_id)
-                             ->first();
+        try {
+            $userEvent = $this->userEventService->cancelRegistration($user, $registrationId);
 
-        if (!$userEvent) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration cancelled successfully.',
+                'registration' => [
+                    'id' => $userEvent->user_event_id,
+                    'status' => $userEvent->status,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            $statusCode = str_contains($e->getMessage(), 'not found') ? 404 : 
+                         (str_contains($e->getMessage(), 'already cancelled') ? 400 : 500);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Registration not found.',
-            ], 404);
+                'message' => $e->getMessage(),
+            ], $statusCode);
         }
-
-        if ($userEvent->status === UserEvent::STATUS_CANCELLED) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration is already cancelled.',
-            ], 400);
-        }
-
-        $userEvent->update(['status' => UserEvent::STATUS_CANCELLED]);
-
-        Log::info('User cancelled event registration', [
-            'user_id' => $user->user_id,
-            'registration_id' => $registrationId,
-            'event_id' => $userEvent->event_id,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration cancelled successfully.',
-        ]);
     }
 }
+
