@@ -18,7 +18,7 @@ export default function ProtectedAdminRoute({
   requireAll = false,
   fallbackPath = '/dashboard'
 }: ProtectedAdminRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { hasAnyPermission, hasAllPermissions, hasAnyRole, hasRole } = usePermissions();
 
   // Show loading state while checking authentication
@@ -36,6 +36,13 @@ export default function ProtectedAdminRoute({
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user && (user as any).suspended === true) {
+    return <Navigate to="/locked-out" replace />;
+  }
+  if (user && user.active === false) {
+    return <Navigate to="/reactivate" replace />;
   }
 
   // Check permissions

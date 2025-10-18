@@ -7,6 +7,8 @@ export interface User {
   role?: string;
   permissions?: string[]; // Array of permission strings
   active?: boolean;
+  suspended?: boolean;
+  can_login?: boolean;
   is_volunteer?: boolean;
   auth_provider?: string; // 'google', 'email', etc.
   password_set_by_user?: boolean; // Whether user has set their own password

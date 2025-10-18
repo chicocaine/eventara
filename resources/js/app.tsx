@@ -9,6 +9,8 @@ import {
   ReactivationPage,
   ProtectedRoute 
 } from './modules/users/index.js';
+import LockoutPage from './modules/users/pages/auth/LockoutPage.js';
+import GuestOnlyRoute from './shared/components/GuestOnlyRoute.js';
 import EventsPage from './modules/events/pages/EventsPage.js';
 import VenuesPage from './modules/venues/pages/VenuesPage.js';
 import VolunteersPage from './modules/volunteers/pages/VolunteersPage.js';
@@ -33,11 +35,24 @@ function App() {
             <Router>
                 <Routes>
                     {/* Public routes */}
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/forgot-password" element={<ForgotPasswordForm />} />
-                    <Route path="/reset-password" element={<ResetPasswordForm />} />
-                    <Route path="/reactivate" element={<ReactivationPage />} />
+                                        <Route path="/login" element={
+                                            <GuestOnlyRoute>
+                                                <LoginPage />
+                                            </GuestOnlyRoute>
+                                        } />
+                                        <Route path="/register" element={
+                                            <GuestOnlyRoute>
+                                                <RegisterPage />
+                                            </GuestOnlyRoute>
+                                        } />
+                                        <Route path="/locked-out" element={
+                                            <GuestOnlyRoute>
+                                                <LockoutPage />
+                                            </GuestOnlyRoute>
+                                        } />
+                                        <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+                                        <Route path="/reset-password" element={<ResetPasswordForm />} />
+                                        <Route path="/reactivate" element={<ReactivationPage />} />
                     
                     {/* Semi-protected routes (user must be authenticated) */}
                     <Route 

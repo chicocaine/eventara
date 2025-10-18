@@ -12,7 +12,7 @@ export default function ProtectedRoute({
   children, 
   redirectTo = '/login' 
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,6 +27,16 @@ export default function ProtectedRoute({
 
   if (!isAuthenticated) {
     return <Navigate to={redirectTo} replace />;
+  }
+
+  // If user is suspended, kick to lockout page
+  if (user && (user as any).suspended === true) {
+    return <Navigate to="/locked-out" replace />;
+  }
+
+  // If user is deactivated (active === false), redirect to reactivation flow
+  if (user && user.active === false) {
+    return <Navigate to="/reactivate" replace />;
   }
 
   return <>{children}</>;
