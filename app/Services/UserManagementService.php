@@ -6,6 +6,7 @@ use App\Models\UserAuth;
 use App\Repositories\UserRepository;
 use App\Repositories\ProfileRepository;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class UserManagementService
@@ -75,6 +76,9 @@ class UserManagementService
         // Use the inactivation service for proper deactivation
         $this->inactivationService->markUserInactive($user);
 
+        // Invalidate all active sessions for this user
+        $this->invalidateUserSessions($user);
+
         Log::info('User account deactivated by admin', [
             'user_id' => $userId,
             'email' => $user->email,
@@ -133,6 +137,9 @@ class UserManagementService
         $user->suspended = true;
         $user->active = false;
         $user->save();
+
+        // Invalidate all active sessions for this user
+        $this->invalidateUserSessions($user);
 
         Log::warning('User account suspended by admin', [
             'user_id' => $userId,
@@ -271,5 +278,29 @@ class UserManagementService
             'suspended' => $suspendedUsers,
             'inactive' => $inactiveUsers,
         ];
+    }
+
+    /**
+     * Invalidate all sessions for a user
+     */
+    private function invalidateUserSessions(UserAuth $user): void
+    {
+        try {
+            // Clear sessions from the database
+            DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->delete();
+
+            Log::info('Sessions invalidated for user', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to invalidate user sessions', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

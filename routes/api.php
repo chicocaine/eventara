@@ -40,7 +40,7 @@ Route::get('/auth/google/redirect', [GoogleAuth::class, 'redirectToGoogle'])->na
 Route::get('/auth/google/callback', [GoogleAuth::class, 'handleGoogleCallback'])->name('api.google.callback');
 
 // Certifika routes (require authentication)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum','ensure-active'])->group(function () {
     Route::post('/certifika/verify-qr', [CertifikaController::class, 'verifyQr'])->name('api.certifika.verify-qr');
     Route::get('/certifika/nfts', [CertifikaController::class, 'getUserNfts'])->name('api.certifika.nfts');
     Route::post('/certifika/sync-nfts', [CertifikaController::class, 'syncNfts'])->name('api.certifika.sync-nfts');
@@ -48,14 +48,14 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // User Profile routes (require authentication)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum','ensure-active'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'getProfile'])->name('api.profile.get');
     Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('api.profile.update');
     Route::post('/profile/upload-image', [ProfileController::class, 'uploadImage'])->name('api.profile.upload-image');
 });
 
 // User Settings & Account Management routes (require authentication)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum','ensure-active'])->group(function () {
     Route::get('/user/settings', [UserController::class, 'getSettings'])->name('api.user.settings.get');
     Route::put('/user/settings', [UserController::class, 'updateSettings'])->name('api.user.settings.update');
     Route::post('/user/deactivate', [UserController::class, 'deactivateAccount'])->name('api.user.deactivate');
@@ -63,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // User Event Management routes (require authentication)
-Route::middleware('auth:sanctum')->prefix('user/events')->group(function () {
+Route::middleware(['auth:sanctum','ensure-active'])->prefix('user/events')->group(function () {
     Route::get('/', [UserEventController::class, 'index'])->name('api.user.events.index');
     Route::post('/register', [UserEventController::class, 'register'])->name('api.user.events.register');
     Route::put('/{registrationId}/status', [UserEventController::class, 'updateStatus'])->name('api.user.events.update-status');
@@ -71,7 +71,7 @@ Route::middleware('auth:sanctum')->prefix('user/events')->group(function () {
 });
 
 // Admin routes (require authentication and admin permissions)
-Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum','ensure-active'])->prefix('admin')->group(function () {
     // User management
     Route::get('/users', [UserManagementController::class, 'index'])->name('api.admin.users.index');
     Route::get('/users/stats', [UserManagementController::class, 'getStats'])->name('api.admin.users.stats');
