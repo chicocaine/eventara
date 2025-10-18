@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthContextType, User, LoginCredentials, RegisterCredentials, AuthResponse, PasswordResetResponse, ProfileSetupRequest, ProfileSetupResponse } from '../types/auth.js';
 import { authService } from '../services/authService.js';
+import axios from 'axios';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -16,6 +17,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check authentication status on mount
   useEffect(() => {
     checkAuthStatus();
+    // Install a response interceptor to react to auth errors
+    const interceptorId = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const status = error?.response?.status;
+        const data = error?.response?.data;
+        // If backend signals suspended or deactivated, force logout and redirect
+        if (status === 401 || status === 419) {
+          // Session expired or unauthorized
+          setUser(null);
+          return Promise.reject(error);
+        }
+        if (status === 403) {
+          // Access forbidden - check for structured flags
+          if (data?.reason === 'suspended' || data?.suspended === true) {
+            setUser((prev) => prev ? { ...prev, suspended: true as any } : prev);
+          }
+          if (data?.reason === 'inactive' || data?.active === false) {
+            setUser((prev) => prev ? { ...prev, active: false } : prev);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptorId);
+    };
   }, []);
 
   const checkAuthStatus = async () => {
@@ -85,10 +114,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await authService.logout();
       setUser(null);
+      try {
+        // Proactively clear any cached auth artifacts
+        sessionStorage.clear();
+        localStorage.removeItem('auth');
+      } catch {}
     } catch (error) {
       console.error('Logout failed:', error);
       // Still clear user state even if server request fails
       setUser(null);
+      try {
+        sessionStorage.clear();
+        localStorage.removeItem('auth');
+      } catch {}
     } finally {
       setIsLoading(false);
     }

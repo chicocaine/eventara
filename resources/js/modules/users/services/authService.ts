@@ -21,6 +21,27 @@ const getCSRFToken = (): string => {
 // Initialize CSRF token
 getCSRFToken();
 
+// Helper to extract structured auth error info
+const parseAuthError = (error: any) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data || {};
+  return { status, data };
+};
+
+// Set up a response interceptor once here (AuthContext also attaches one to update state)
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const { status } = parseAuthError(error);
+    // Just pass through; state handling is done in AuthContext
+    if (status === 401 || status === 403 || status === 419) {
+      // Optionally log
+      // console.debug('Auth-related HTTP status caught:', status);
+    }
+    return Promise.reject(error);
+  }
+);
+
 class AuthService {
   /**
    * Login user with email and password
